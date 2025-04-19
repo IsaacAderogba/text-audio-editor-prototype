@@ -1,0 +1,18 @@
+{
+  "name": "@teap/core",
+  "private": true,
+  "version": "1.0.0",
+  "description": "",
+  "main": "dist/index.umd.cjs",
+  "module": "dist/index.js",
+  "typings": "dist/index.d.ts",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "devDependencies": {
+    "vite-plugin-dts": "^4.5.3"
+  }
+}

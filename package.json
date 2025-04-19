@@ -1,0 +1,59 @@
+{
+  "name": "teap",
+  "version": "1.0.0",
+  "description": "",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ]
+  },
+  "scripts": {
+    "build:core": "npm run build --workspace=@teap/core",
+    "build:server": "npm run build --workspace=@teap/server",
+    "build:client": "npm run build --workspace=@teap/client",
+    "build:server:remote": "npm run build:core && npm run build:server",
+    "build:client:remote": "npm run build:core && npm run build:server && npm run build:client",
+    "build:site:remote": "npm run build:core && npm run build:server && npm run build:site",
+    "dev:server": "npm run dev --workspace=@teap/server",
+    "dev:client": "npm run dev --workspace=@teap/client",
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "prepare": "husky",
+    "lint:staged": "lint-staged"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IsaacAderogba/text-audio-editor-prototype.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/IsaacAderogba/text-audio-editor-prototype/issues"
+  },
+  "homepage": "https://github.com/IsaacAderogba/text-audio-editor-prototype#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^19.8.0",
+    "@commitlint/config-conventional": "^19.8.0",
+    "@types/node": "^22.14.1",
+    "eslint": "^9.25.0",
+    "eslint-plugin-react-hooks": "^5.2.0",
+    "eslint-plugin-react-refresh": "^0.4.19",
+    "globals": "^16.0.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^15.5.1",
+    "prettier": "^3.5.3",
+    "typescript": "^5.8.3",
+    "typescript-eslint": "^8.30.1",
+    "vite": "^6.3.2"
+  },
+  "engines": {
+    "node": "22"
+  },
+  "lint-staged": {
+    "*.{js,ts,tsx}": [
+      "prettier --write",
+      "eslint --fix"
+    ]
+  }
+}
