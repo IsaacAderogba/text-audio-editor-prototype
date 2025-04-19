@@ -1,5 +1,5 @@
 import { makeAutoObservable } from "mobx";
-import type { Store } from "./store";
+import type { StoreObservable } from "./store";
 import { DeepPartial } from "../utilities/types";
 import { merge } from "lodash-es";
 import { darkTheme, lightTheme } from "../utilities/stitches";
@@ -10,11 +10,11 @@ export interface InterfaceState {
   themeMode: InterfaceThemeMode;
 }
 
-export class InterfaceStore {
-  store: Store;
+export class InterfaceStoreObservable {
+  store: StoreObservable;
   state: InterfaceState;
 
-  constructor(store: Store) {
+  constructor(store: StoreObservable) {
     makeAutoObservable(this);
 
     this.store = store;

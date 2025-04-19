@@ -1,11 +1,11 @@
-import { InterfaceStore } from "./interface";
-import { CacheStore } from "./cache";
-import { ModelStore } from "./models/models";
+import { InterfaceStoreObservable } from "./interface";
+import { CacheStoreObservable } from "./cache";
+import { EntitiesStoreObservable } from "./entities";
 
-export class Store {
-  cache = new CacheStore(this);
-  interface = new InterfaceStore(this);
-  models = new ModelStore(this);
+export class StoreObservable {
+  cache = new CacheStoreObservable(this);
+  interface = new InterfaceStoreObservable(this);
+  models = new EntitiesStoreObservable(this);
 }
 
-export const store = new Store();
+export const storeObservable = new StoreObservable();

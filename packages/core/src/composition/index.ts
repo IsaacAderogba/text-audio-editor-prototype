@@ -1,9 +1,16 @@
-import { CompositionDocument } from "./CompositionDocument";
-import { CompositionMetadata, CompositionSegment, CompositionTrack } from "./CompositionTimeline";
+import { CompositionEditorState } from "./editor";
+import {
+  CompositionMetadataState,
+  CompositionSegmentState,
+  CompositionTrackState
+} from "./timeline";
 
-export interface CompositionEditorState {
-  documents: Record<string, CompositionDocument>;
-  tracks: Record<string, CompositionTrack>;
-  segments: Record<string, CompositionSegment>;
-  metadata: CompositionMetadata;
+export interface CompositionState {
+  editors: Record<string, CompositionEditorState>;
+  tracks: Record<string, CompositionTrackState>;
+  segments: Record<string, CompositionSegmentState>;
+  metadata: CompositionMetadataState;
 }
+
+export * from "./editor";
+export * from "./timeline";

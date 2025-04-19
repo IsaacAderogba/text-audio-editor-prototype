@@ -1,17 +1,17 @@
 import { makeAutoObservable } from "mobx";
 
-import type { Store } from "./store";
+import type { StoreObservable } from "./store";
 import type { InterfaceThemePreference } from "./interface";
 
 interface CacheState {
   interfaceThemePreference: InterfaceThemePreference;
 }
 
-export class CacheStore {
-  store: Store;
+export class CacheStoreObservable {
+  store: StoreObservable;
   state: Partial<CacheState>;
 
-  constructor(store: Store) {
+  constructor(store: StoreObservable) {
     makeAutoObservable(this);
 
     this.store = store;

@@ -1,4 +1,4 @@
-import { CompositionEditorState } from "../composition";
+import { CompositionState } from "../composition";
 
 export interface ProjectEntity {
   id: string;
@@ -11,7 +11,7 @@ export interface ChapterEntity {
   id: string;
   projectId: ProjectEntity["id"];
 
-  editorState: CompositionEditorState;
+  compositionState: CompositionState;
 
   createdAt: string;
   updatedAt: string;
