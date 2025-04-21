@@ -1,3 +1,5 @@
+import { SegmentState } from "./timeline";
+
 /**
  * EditorStates
  */
@@ -5,56 +7,74 @@ export type CompositionEditorState = CompositionPageEditorState;
 
 export type CompositionPageEditorState = {
   type: "page";
-  attrs: {
-    id: string;
-  };
-  content: CompositionBlockState[];
+  attrs: CompositionPageEditorAttrs;
+  content: CompositionEditorBlockState[];
 };
 
+export interface CompositionPageEditorAttrs {
+  id: string;
+}
+
 /**
- * BlockStates
+ * Block States
  */
-export type CompositionBlockState = CompositionParagraphBlockState;
+export type CompositionEditorBlockState = CompositionParagraphBlockState;
 
 export type CompositionParagraphBlockState = {
   type: "paragraph";
-  attrs: {
-    id: string;
-  };
-  content: CompositionInlineBlockState[];
+  attrs: CompositionParagraphBlockAttrs;
+  content: CompositionEditorSegmentState[];
 };
+
+export interface CompositionParagraphBlockAttrs {
+  id: string;
+}
 
 /**
- * Inline BlockStates
+ * Segment States
  */
-export type CompositionInlineBlockState = CompositionSnippetInlineBlockState;
+export type CompositionEditorSegmentState = CompositionVoiceSegmentState;
 
-export type CompositionSnippetInlineBlockState = {
-  type: "snippet";
-  attrs: {
-    id: string;
-    voiceId: string;
-  };
-  content: CompositionInlineState[];
+export type CompositionVoiceSegmentState = {
+  type: "voice";
+  attrs: CompositionVoiceSegmentAttrs;
+  content: CompositionEditorInlineState[];
 };
+
+interface CompositionVoiceSegmentAttrs extends SegmentState {
+  voiceId: string;
+}
+
+export type CompositionSpaceSegmentState = {
+  type: "space";
+  attrs: CompositionSpaceSegmentAttrs;
+  content: CompositionEditorInlineState[];
+};
+
+interface CompositionSpaceSegmentAttrs extends SegmentState {}
 
 /**
  * InlineStates
  */
-export type CompositionInlineState = CompositionTextInlineState;
+export type CompositionEditorInlineState = CompositionTextInlineState;
 
-export type CompositionTextInlineState = {
+export interface CompositionTextInlineState {
   type: "text";
-  attrs: { text: string };
-  marks: CompositionAnnotationState[];
-};
+  attrs: CompositionTextInlineAttrs;
+  marks: CompositionEditorAnnotationState[];
+}
 
+export interface CompositionTextInlineAttrs {
+  text: string;
+}
 /**
  * AnnotationStates
  */
-export type CompositionAnnotationState = CompositionBoldAnnotationState;
+export type CompositionEditorAnnotationState = CompositionBoldAnnotationState;
 
-export type CompositionBoldAnnotationState = {
+export interface CompositionBoldAnnotationState {
   type: "bold";
-  attrs: {};
-};
+  attrs: CompositionBoldAnnotationAttrs;
+}
+
+export interface CompositionBoldAnnotationAttrs {}

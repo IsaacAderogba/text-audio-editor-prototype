@@ -1,12 +1,4 @@
-export type CompositionTrackState =
-  | CompositionEditorTrackState
-  | CompositionVideoTrackState
-  | CompositionAudioTrackState;
-
-export interface CompositionEditorTrackState extends TrackState {
-  type: "editor";
-  editor: {};
-}
+export type CompositionTrackState = CompositionVideoTrackState | CompositionAudioTrackState;
 
 export interface CompositionVideoTrackState extends TrackState {
   type: "video";
@@ -30,17 +22,7 @@ export interface CompositionMetadataState {
   height: number;
 }
 
-export type CompositionSegmentState =
-  | CompositionEditorSegmentState
-  | CompositionVideoSegmentState
-  | CompositionAudioSegmentState;
-
-export interface CompositionEditorSegmentState extends SegmentState {
-  type: "editor";
-  editor: {
-    inlineBlockId: string;
-  };
-}
+export type CompositionSegmentState = CompositionVideoSegmentState | CompositionAudioSegmentState;
 
 export interface CompositionVideoSegmentState extends SegmentState {
   type: "video";
@@ -56,7 +38,7 @@ export interface CompositionAudioSegmentState extends SegmentState {
   };
 }
 
-interface SegmentState {
+export interface SegmentState {
   id: string;
   trackId: string;
   from: number;
