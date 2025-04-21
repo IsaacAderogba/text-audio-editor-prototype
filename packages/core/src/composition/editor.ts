@@ -3,6 +3,7 @@ import { SegmentState } from "./timeline";
 /**
  * EditorStates
  */
+export type EditorType = CompositionEditorState["type"];
 export type CompositionEditorState = CompositionPageEditorState;
 
 export type CompositionPageEditorState = {
@@ -18,6 +19,7 @@ export interface CompositionPageEditorAttrs {
 /**
  * Block States
  */
+export type EditorBlockType = CompositionEditorBlockState["type"];
 export type CompositionEditorBlockState = CompositionParagraphBlockState;
 
 export type CompositionParagraphBlockState = {
@@ -33,7 +35,10 @@ export interface CompositionParagraphBlockAttrs {
 /**
  * Segment States
  */
-export type CompositionEditorSegmentState = CompositionVoiceSegmentState;
+export type EditorSegmentType = CompositionEditorSegmentState["type"];
+export type CompositionEditorSegmentState =
+  | CompositionVoiceSegmentState
+  | CompositionSpaceSegmentState;
 
 export type CompositionVoiceSegmentState = {
   type: "voice";
@@ -56,6 +61,7 @@ interface CompositionSpaceSegmentAttrs extends SegmentState {}
 /**
  * InlineStates
  */
+export type EditorInlineType = CompositionEditorInlineState["type"];
 export type CompositionEditorInlineState = CompositionTextInlineState;
 
 export interface CompositionTextInlineState {
@@ -70,6 +76,7 @@ export interface CompositionTextInlineAttrs {
 /**
  * AnnotationStates
  */
+export type EditorAnnotationType = CompositionEditorAnnotationState["type"];
 export type CompositionEditorAnnotationState = CompositionBoldAnnotationState;
 
 export interface CompositionBoldAnnotationState {

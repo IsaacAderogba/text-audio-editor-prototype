@@ -14,5 +14,8 @@
   },
   "devDependencies": {
     "vite-plugin-dts": "^4.5.3"
+  },
+  "dependencies": {
+    "prosemirror-model": "^1.25.0"
   }
 }
