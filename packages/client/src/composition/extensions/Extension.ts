@@ -1,4 +1,3 @@
-import { MarkSpec, NodeSpec } from "prosemirror-model";
 import { Command, Plugin } from "prosemirror-state";
 import type { Editor } from "../Editor";
 
@@ -16,11 +15,6 @@ export abstract class Extension {
   bind = (editor: Editor) => {
     this._editor = editor;
     return this;
-  };
-
-  initializeSchema?(): {
-    nodes?: Record<string, NodeSpec>;
-    marks?: Record<string, MarkSpec>;
   };
 
   initializePlugins?(): Record<string, Plugin>;

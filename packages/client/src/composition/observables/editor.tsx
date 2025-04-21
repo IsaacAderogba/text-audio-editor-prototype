@@ -1,11 +1,10 @@
 import { CompositionEditorState } from "@taep/core";
-import { makeAutoObservable } from "mobx";
-import { EditorState } from "prosemirror-state";
+import { makeAutoObservable, toJS } from "mobx";
 import type { CompositionObservable } from "./state";
 
 export class CompositionEditorObservable {
   private composition: CompositionObservable;
-  state: EditorState;
+  state: CompositionEditorState;
 
   constructor(composition: CompositionObservable, state: CompositionEditorState) {
     makeAutoObservable(this);
@@ -14,11 +13,11 @@ export class CompositionEditorObservable {
     this.state = state;
   }
 
-  setState() {
-    // update state based on transaction
+  setState(state: CompositionEditorState) {
+    this.state = state;
   }
 
   toJSON(): CompositionEditorState {
-    return this.state.toJSON();
+    return toJS(this.state);
   }
 }

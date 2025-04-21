@@ -46,7 +46,7 @@ export class CompositionObservable {
   toJSON(): CompositionState {
     const editors: CompositionState["editors"] = {};
     Object.values(this.state.editors).forEach(editor => {
-      editors[editor.state.doc.attrs.id] = editor.toJSON();
+      editors[editor.state.attrs.id] = editor.toJSON();
     });
 
     const tracks: CompositionState["tracks"] = {};
