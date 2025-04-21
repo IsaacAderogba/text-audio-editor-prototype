@@ -1,5 +1,5 @@
 {
-  "name": "teap",
+  "name": "taep",
   "version": "1.0.0",
   "description": "",
   "private": true,
@@ -9,14 +9,14 @@
     ]
   },
   "scripts": {
-    "build:core": "npm run build --workspace=@teap/core",
-    "build:server": "npm run build --workspace=@teap/server",
-    "build:client": "npm run build --workspace=@teap/client",
+    "build:core": "npm run build --workspace=@taep/core",
+    "build:server": "npm run build --workspace=@taep/server",
+    "build:client": "npm run build --workspace=@taep/client",
     "build:server:remote": "npm run build:core && npm run build:server",
     "build:client:remote": "npm run build:core && npm run build:server && npm run build:client",
     "build:site:remote": "npm run build:core && npm run build:server && npm run build:site",
-    "dev:server": "npm run dev --workspace=@teap/server",
-    "dev:client": "npm run dev --workspace=@teap/client",
+    "dev:server": "npm run dev --workspace=@taep/server",
+    "dev:client": "npm run dev --workspace=@taep/client",
     "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
     "prepare": "husky",
     "lint:staged": "lint-staged"

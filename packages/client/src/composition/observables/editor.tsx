@@ -1,13 +1,16 @@
-import { CompositionEditorState } from "@teap/core";
+import { CompositionEditorState } from "@taep/core";
 import { makeAutoObservable } from "mobx";
 import { EditorState } from "prosemirror-state";
+import type { CompositionObservable } from "./state";
 
 export class CompositionEditorObservable {
+  private composition: CompositionObservable;
   state: EditorState;
 
-  constructor(state: CompositionEditorState) {
+  constructor(composition: CompositionObservable, state: CompositionEditorState) {
     makeAutoObservable(this);
-    // @ts-expect-error - convert json to prosemirror state
+
+    this.composition = composition;
     this.state = state;
   }
 

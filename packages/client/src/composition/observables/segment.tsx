@@ -1,12 +1,17 @@
-import { CompositionSegmentState } from "@teap/core";
+import { CompositionSegmentState } from "@taep/core";
 import { merge } from "lodash-es";
-import { toJS } from "mobx";
+import { makeAutoObservable, toJS } from "mobx";
 import { DeepPartial } from "../../utilities/types";
+import { CompositionObservable } from "./state";
 
 export class CompositionSegmentObservable {
+  private composition: CompositionObservable;
   state: CompositionSegmentState;
 
-  constructor(state: CompositionSegmentState) {
+  constructor(composition: CompositionObservable, state: CompositionSegmentState) {
+    makeAutoObservable(this);
+
+    this.composition = composition;
     this.state = state;
   }
 

@@ -1,7 +1,7 @@
 import { makeAutoObservable } from "mobx";
 
 import type { StoreObservable } from "./store";
-import { ChapterEntity, ProjectEntity } from "@teap/core";
+import { ChapterEntity, ProjectEntity } from "@taep/core";
 import { DeepPartial } from "../utilities/types";
 import { merge } from "lodash-es";
 

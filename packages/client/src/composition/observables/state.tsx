@@ -1,4 +1,4 @@
-import { CompositionState } from "@teap/core";
+import { CompositionState } from "@taep/core";
 import { makeAutoObservable } from "mobx";
 import { CompositionEditorObservable } from "./editor";
 import { CompositionMetadataObservable } from "./metadata";
@@ -12,6 +12,8 @@ export interface CompositionObservableState {
   metadata: CompositionMetadataObservable;
 }
 
+export interface CompositionObservableOptions {}
+
 export class CompositionObservable {
   state: CompositionObservableState;
 
@@ -20,24 +22,24 @@ export class CompositionObservable {
 
     const editors: CompositionObservableState["editors"] = {};
     Object.values(state.editors).forEach(editor => {
-      editors[editor.attrs.id] = new CompositionEditorObservable(editor);
+      editors[editor.attrs.id] = new CompositionEditorObservable(this, editor);
     });
 
     const tracks: CompositionObservableState["tracks"] = {};
     Object.values(state.tracks).forEach(track => {
-      tracks[track.id] = new CompositionTrackObservable(track);
+      tracks[track.id] = new CompositionTrackObservable(this, track);
     });
 
     const segments: CompositionObservableState["segments"] = {};
     Object.values(state.segments).forEach(segment => {
-      segments[segment.id] = new CompositionSegmentObservable(segment);
+      segments[segment.id] = new CompositionSegmentObservable(this, segment);
     });
 
     this.state = {
       editors,
       tracks,
       segments,
-      metadata: new CompositionMetadataObservable(state.metadata)
+      metadata: new CompositionMetadataObservable(this, state.metadata)
     };
   }
 

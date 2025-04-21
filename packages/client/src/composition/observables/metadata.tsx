@@ -1,12 +1,15 @@
-import { CompositionMetadataState } from "@teap/core";
+import { CompositionMetadataState } from "@taep/core";
 import { merge } from "lodash-es";
 import { toJS } from "mobx";
 import { DeepPartial } from "../../utilities/types";
+import type { CompositionObservable } from "./state";
 
 export class CompositionMetadataObservable {
+  private composition: CompositionObservable;
   state: CompositionMetadataState;
 
-  constructor(state: CompositionMetadataState) {
+  constructor(composition: CompositionObservable, state: CompositionMetadataState) {
+    this.composition = composition;
     this.state = state;
   }
 
