@@ -4,12 +4,7 @@ import {
   CompositionEditorBlockState,
   CompositionEditorInlineState,
   CompositionEditorSegmentState,
-  CompositionEditorState,
-  EditorAnnotationType,
-  EditorBlockType,
-  EditorInlineType,
-  EditorSegmentType,
-  EditorType
+  CompositionEditorState
 } from "../composition";
 
 export const createAttrs = <
@@ -78,17 +73,14 @@ export function mergeAttributes(...objects: Record<string, any>[]): Record<strin
     }, {});
 }
 
-export const classnames = (...classNames: (string | undefined)[]) => {
-  return classNames.filter(name => name).join(" ");
-};
+export const createAttrsDOMParser = (type: string) => (element: string | HTMLElement) => {
+  if (typeof element === "string") return false;
 
-export const createClassSelector = (
-  ...classNames: [
-    EditorAnnotationType | EditorInlineType | EditorSegmentType | EditorBlockType | EditorType,
-    ...string[]
-  ]
-) => {
-  const classes = classnames(...classNames);
-  const selectors = `.${classes.split(" ").join(".")}`;
-  return [classes, selectors] as const;
+  const dataType = element.getAttribute("data-type");
+  if (dataType === type) {
+    console.log("parsed", type);
+    const attrs = element.getAttribute(type);
+    return attrs ? JSON.parse(attrs) : {};
+  }
+  return false;
 };
