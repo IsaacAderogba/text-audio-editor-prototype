@@ -31,7 +31,7 @@ export const nodeSpecs: Record<string, NodeSpec> = {
   page: {
     content: NodeContent["block+"],
     group: NodeGroups.editor,
-    attrs: createAttrs<CompositionPageEditorState>({ id: "" }),
+    attrs: createAttrs<CompositionPageEditorState>({ id: "", createdAt: "", updatedAt: "" }),
     toDOM: node => ["main", mergeNodeAttrs(node, { class: "page" }), 0]
   },
 
@@ -39,7 +39,7 @@ export const nodeSpecs: Record<string, NodeSpec> = {
   paragraph: {
     content: NodeContent["segment+"],
     group: NodeGroups.block,
-    attrs: createAttrs<CompositionParagraphBlockState>({ id: "" }),
+    attrs: createAttrs<CompositionParagraphBlockState>({ id: "", createdAt: "", updatedAt: "" }),
     parseDOM: [
       { tag: "p", getAttrs: createAttrsDOMParser("paragraph") },
       { tag: "p", priority: 1 }

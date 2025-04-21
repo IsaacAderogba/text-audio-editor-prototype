@@ -14,6 +14,8 @@ export type CompositionPageEditorState = {
 
 export interface CompositionPageEditorAttrs {
   id: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**
@@ -30,6 +32,8 @@ export type CompositionParagraphBlockState = {
 
 export interface CompositionParagraphBlockAttrs {
   id: string;
+  createdAt: string;
+  updatedAt: string;
 }
 
 /**
