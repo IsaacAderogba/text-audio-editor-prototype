@@ -12,7 +12,13 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
-    "@taep/core": "1.0.0"
+    "@taep/core": "1.0.0",
+    "@trpc/server": "^11.1.0",
+    "cors": "^2.8.5",
+    "express": "^5.1.0",
+    "lodash-es": "^4.17.21",
+    "socket.io": "^4.8.1",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "tsx": "^4.19.3"
