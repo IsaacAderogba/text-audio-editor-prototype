@@ -4,7 +4,7 @@ import {
   CompositionPageEditorState,
   CompositionParagraphBlockState,
   CompositionSpaceSegmentState,
-  CompositionVoiceSegmentState
+  CompositionSampleSegmentState
 } from "../composition";
 import { createAttrs, createAttrsDOMParser, mergeMarkAttrs, mergeNodeAttrs } from "./attrs";
 
@@ -50,11 +50,11 @@ export const nodeSpecs: Record<string, NodeSpec> = {
   },
 
   // segments
-  voice: {
+  sample: {
     inline: true,
     content: NodeContent["inline*"],
     group: NodeGroups.segment,
-    attrs: createAttrs<CompositionVoiceSegmentState>({
+    attrs: createAttrs<CompositionSampleSegmentState>({
       id: "",
       voiceId: "",
       trackId: "",
