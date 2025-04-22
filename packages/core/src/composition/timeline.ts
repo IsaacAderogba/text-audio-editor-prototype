@@ -1,16 +1,22 @@
 export type CompositionTrackState = CompositionVideoTrackState | CompositionAudioTrackState;
 
-export interface CompositionVideoTrackState extends TrackState {
+export interface CompositionVideoTrackState {
   type: "video";
-  video: {};
+  attrs: CompositionVideoTrackAttrs;
+  content: Record<string, CompositionFrameSegmentState>;
 }
 
-export interface CompositionAudioTrackState extends TrackState {
+export interface CompositionVideoTrackAttrs extends TrackAttrs {}
+
+export interface CompositionAudioTrackState {
   type: "audio";
-  audio: {};
+  attrs: CompositionAudioTrackAttrs;
+  content: Record<string, CompositionSampleSegmentState>;
 }
 
-interface TrackState {
+export interface CompositionAudioTrackAttrs extends TrackAttrs {}
+
+interface TrackAttrs {
   id: string;
   createdAt: string;
   updatedAt: string;
@@ -22,23 +28,27 @@ export interface CompositionMetadataState {
   height: number;
 }
 
-export type CompositionSegmentState = CompositionVideoSegmentState | CompositionAudioSegmentState;
+export type CompositionSegmentState = CompositionFrameSegmentState | CompositionSampleSegmentState;
 
-export interface CompositionVideoSegmentState extends SegmentState {
-  type: "video";
-  video: {
-    src: string;
-  };
+export interface CompositionFrameSegmentState {
+  type: "frame";
+  attrs: CompositionFrameSegmentAttrs;
 }
 
-export interface CompositionAudioSegmentState extends SegmentState {
-  type: "audio";
-  audio: {
-    src: string;
-  };
+export interface CompositionFrameSegmentAttrs extends SegmentAttrs {
+  src: string;
 }
 
-export interface SegmentState {
+export interface CompositionSampleSegmentState {
+  type: "sample";
+  attrs: CompositionSampleSegmentAttrs;
+}
+
+export interface CompositionSampleSegmentAttrs extends SegmentAttrs {
+  src: string;
+}
+
+export interface SegmentAttrs {
   id: string;
   trackId: string;
   from: number;

@@ -1,14 +1,9 @@
 import { CompositionEditorState } from "./editor";
-import {
-  CompositionMetadataState,
-  CompositionSegmentState,
-  CompositionTrackState
-} from "./timeline";
+import { CompositionMetadataState, CompositionTrackState } from "./timeline";
 
 export interface CompositionState {
   editors: Record<string, CompositionEditorState>;
   tracks: Record<string, CompositionTrackState>;
-  segments: Record<string, CompositionSegmentState>;
   metadata: CompositionMetadataState;
 }
 

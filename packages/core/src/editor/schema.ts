@@ -1,10 +1,10 @@
 import { MarkSpec, NodeSpec, Schema } from "prosemirror-model";
 import {
   CompositionBoldAnnotationState,
-  CompositionPageEditorState,
+  CompositionDocumentEditorState,
   CompositionParagraphBlockState,
   CompositionSpaceSegmentState,
-  CompositionSampleSegmentState
+  CompositionVoiceSegmentState
 } from "../composition";
 import { createAttrs, createAttrsDOMParser, mergeMarkAttrs, mergeNodeAttrs } from "./attrs";
 
@@ -28,11 +28,11 @@ enum MarkGroups {
 
 export const nodeSpecs: Record<string, NodeSpec> = {
   // editors
-  page: {
+  document: {
     content: NodeContent["block+"],
     group: NodeGroups.editor,
-    attrs: createAttrs<CompositionPageEditorState>({ id: "", createdAt: "", updatedAt: "" }),
-    toDOM: node => ["main", mergeNodeAttrs(node, { class: "page" }), 0]
+    attrs: createAttrs<CompositionDocumentEditorState>({ id: "", createdAt: "", updatedAt: "" }),
+    toDOM: node => ["main", mergeNodeAttrs(node, { class: "document" }), 0]
   },
 
   // blocks
@@ -50,11 +50,11 @@ export const nodeSpecs: Record<string, NodeSpec> = {
   },
 
   // segments
-  sample: {
+  voice: {
     inline: true,
     content: NodeContent["inline*"],
     group: NodeGroups.segment,
-    attrs: createAttrs<CompositionSampleSegmentState>({
+    attrs: createAttrs<CompositionVoiceSegmentState>({
       id: "",
       voiceId: "",
       trackId: "",
@@ -111,4 +111,8 @@ export const markSpecs: Record<string, MarkSpec> = {
   }
 };
 
-export const pageSchema = new Schema({ nodes: nodeSpecs, marks: markSpecs, topNode: "page" });
+export const documentSchema = new Schema({
+  nodes: nodeSpecs,
+  marks: markSpecs,
+  topNode: "document"
+});

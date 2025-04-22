@@ -2,13 +2,11 @@ import { CompositionState } from "@taep/core";
 import { makeAutoObservable } from "mobx";
 import { CompositionEditorObservable } from "./editor";
 import { CompositionMetadataObservable } from "./metadata";
-import { CompositionSegmentObservable } from "./segment";
 import { CompositionTrackObservable } from "./track";
 
 export interface CompositionObservableState {
   editors: Record<string, CompositionEditorObservable>;
   tracks: Record<string, CompositionTrackObservable>;
-  segments: Record<string, CompositionSegmentObservable>;
   metadata: CompositionMetadataObservable;
 }
 
@@ -27,18 +25,12 @@ export class CompositionObservable {
 
     const tracks: CompositionObservableState["tracks"] = {};
     Object.values(state.tracks).forEach(track => {
-      tracks[track.id] = new CompositionTrackObservable(this, track);
-    });
-
-    const segments: CompositionObservableState["segments"] = {};
-    Object.values(state.segments).forEach(segment => {
-      segments[segment.id] = new CompositionSegmentObservable(this, segment);
+      tracks[track.attrs.id] = new CompositionTrackObservable(this, track);
     });
 
     this.state = {
       editors,
       tracks,
-      segments,
       metadata: new CompositionMetadataObservable(this, state.metadata)
     };
   }
@@ -51,18 +43,12 @@ export class CompositionObservable {
 
     const tracks: CompositionState["tracks"] = {};
     Object.values(this.state.tracks).forEach(track => {
-      tracks[track.state.id] = track.toJSON();
-    });
-
-    const segments: CompositionState["segments"] = {};
-    Object.values(this.state.segments).forEach(segment => {
-      segments[segment.state.id] = segment.toJSON();
+      tracks[track.state.attrs.id] = track.toJSON();
     });
 
     return {
       editors,
       tracks,
-      segments,
       metadata: this.state.metadata.toJSON()
     };
   }

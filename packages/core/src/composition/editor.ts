@@ -1,18 +1,18 @@
-import { SegmentState } from "./timeline";
+import { SegmentAttrs } from "./timeline";
 
 /**
  * EditorStates
  */
 export type EditorType = CompositionEditorState["type"];
-export type CompositionEditorState = CompositionPageEditorState;
+export type CompositionEditorState = CompositionDocumentEditorState;
 
-export type CompositionPageEditorState = {
-  type: "page";
-  attrs: CompositionPageEditorAttrs;
+export type CompositionDocumentEditorState = {
+  type: "document";
+  attrs: CompositionDocumentEditorAttrs;
   content: CompositionEditorBlockState[];
 };
 
-export interface CompositionPageEditorAttrs {
+export interface CompositionDocumentEditorAttrs {
   id: string;
   createdAt: string;
   updatedAt: string;
@@ -41,16 +41,16 @@ export interface CompositionParagraphBlockAttrs {
  */
 export type EditorSegmentType = CompositionEditorSegmentState["type"];
 export type CompositionEditorSegmentState =
-  | CompositionSampleSegmentState
+  | CompositionVoiceSegmentState
   | CompositionSpaceSegmentState;
 
-export type CompositionSampleSegmentState = {
-  type: "sample";
-  attrs: CompositionSampleSegmentAttrs;
+export type CompositionVoiceSegmentState = {
+  type: "voice";
+  attrs: CompositionVoiceSegmentAttrs;
   content: CompositionEditorInlineState[];
 };
 
-interface CompositionSampleSegmentAttrs extends SegmentState {
+interface CompositionVoiceSegmentAttrs extends SegmentAttrs {
   voiceId: string;
 }
 
@@ -60,7 +60,7 @@ export type CompositionSpaceSegmentState = {
   content: CompositionEditorInlineState[];
 };
 
-interface CompositionSpaceSegmentAttrs extends SegmentState {}
+interface CompositionSpaceSegmentAttrs extends SegmentAttrs {}
 
 /**
  * InlineStates
