@@ -1,19 +1,8 @@
 import { AttributeSpec, Mark, Node } from "prosemirror-model";
-import {
-  CompositionEditorAnnotationState,
-  CompositionEditorBlockState,
-  CompositionEditorInlineState,
-  CompositionEditorSegmentState,
-  CompositionEditorState
-} from "../composition";
+import { Annotation, Block, Inline, DocumentSegment, DocumentTrack } from "../composition";
 
 export const createAttrs = <
-  T extends
-    | CompositionEditorAnnotationState
-    | CompositionEditorInlineState
-    | CompositionEditorSegmentState
-    | CompositionEditorBlockState
-    | CompositionEditorState
+  T extends Annotation | Inline | DocumentSegment | Block | DocumentTrack
 >(
   attrs: T["attrs"]
 ) => {

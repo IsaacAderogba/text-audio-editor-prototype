@@ -1,8 +1,8 @@
 import { EditorState, EditorStateConfig, Plugin, Transaction } from "prosemirror-state";
 import { DirectEditorProps, EditorView } from "prosemirror-view";
 import { Extension } from "../extensions/Extension";
-import { CompositionObservable } from "../observables/state";
 import { CommandChainProps, createCommandChain } from "./command/chain";
+import type { CompositionObservable } from "../observables/CompositionTrackObservable";
 
 interface EditorEvents {
   change: (data: { state: EditorState; transaction: Transaction }) => void;
@@ -10,7 +10,7 @@ interface EditorEvents {
   unmount: (data: { view: EditorView }) => void;
 }
 
-interface EditorOptions {
+interface EditorOptions extends Omit<EditorStateConfig, "plugins"> {
   extensions: Extension[];
   context: EditorContext;
 }
@@ -22,16 +22,13 @@ interface EditorContext {
 export class Editor {
   private listeners = new Map<string, Set<Function>>();
   private extensions = new Map<string, Extension>();
-  private plugins: Plugin<any>[] = [];
+  private state: EditorState;
   public commands = {} as Commands;
   public context: EditorContext;
 
-  constructor(
-    public id: string,
-    options: EditorOptions
-  ) {
-    this.context = options.context;
-    for (const extension of options.extensions) {
+  constructor({ context, extensions, ...stateOptions }: EditorOptions) {
+    this.context = context;
+    for (const extension of extensions) {
       this.extensions.set(extension.name, extension.bind(this));
     }
 
@@ -49,8 +46,8 @@ export class Editor {
       }
     });
 
-    this.plugins = plugins;
     this.commands = commands;
+    this.state = EditorState.create({ ...stateOptions, plugins });
   }
 
   private _view?: EditorView;
@@ -91,7 +88,7 @@ export class Editor {
       { mount },
       {
         ...options.view,
-        state: EditorState.create({ ...options.state, plugins: this.plugins }),
+        state: this.state,
         dispatchTransaction: transaction => {
           const state = view.state.apply(transaction);
           view.updateState(state);

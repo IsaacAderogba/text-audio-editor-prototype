@@ -1,11 +1,13 @@
-import { CompositionEditorState } from "./editor";
-import { CompositionMetadataState, CompositionTrackState } from "./timeline";
+import { DocumentSegment, DocumentTrack } from "./DocumentTrack";
+import { Metadata, MediaTrack, MediaSegment } from "./MediaTrack";
 
+export type Track = DocumentTrack | MediaTrack;
+export type Segment = MediaSegment | DocumentSegment;
 export interface CompositionState {
-  editors: Record<string, CompositionEditorState>;
-  tracks: Record<string, CompositionTrackState>;
-  metadata: CompositionMetadataState;
+  documentTracks: Record<string, DocumentTrack>;
+  mediaTracks: Record<string, MediaTrack>;
+  metadata: Metadata;
 }
 
-export * from "./editor";
-export * from "./timeline";
+export * from "./DocumentTrack";
+export * from "./MediaTrack";

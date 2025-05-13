@@ -1,25 +1,25 @@
-import { CompositionTrackState } from "@taep/core";
+import { MediaTrack } from "@taep/core";
 import { merge } from "lodash-es";
 import { DeepPartial } from "../../utilities/types";
 import { makeAutoObservable, toJS } from "mobx";
-import { CompositionObservable } from "./state";
+import { CompositionObservable } from "./CompositionTrackObservable";
 
-export class CompositionTrackObservable {
+export class MediaTrackObservable {
   private composition: CompositionObservable;
-  state: CompositionTrackState;
+  state: MediaTrack;
 
-  constructor(composition: CompositionObservable, state: CompositionTrackState) {
+  constructor(composition: CompositionObservable, state: MediaTrack) {
     makeAutoObservable(this);
 
     this.composition = composition;
     this.state = state;
   }
 
-  setState(state: DeepPartial<CompositionTrackState>) {
+  setState(state: DeepPartial<MediaTrack>) {
     merge(this.state, state);
   }
 
-  toJSON(): CompositionTrackState {
+  toJSON(): MediaTrack {
     return toJS(this.state);
   }
 }

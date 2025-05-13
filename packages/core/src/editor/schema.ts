@@ -1,14 +1,9 @@
 import { MarkSpec, NodeSpec, Schema } from "prosemirror-model";
-import {
-  CompositionBoldAnnotationState,
-  CompositionDocumentEditorState,
-  CompositionParagraphBlockState,
-  CompositionVoiceSegmentState
-} from "../composition";
+import { BoldAnnotation, PageTrack, ParagraphBlock, VoiceSegment } from "../composition";
 import { createAttrs, createAttrsDOMParser, mergeMarkAttrs, mergeNodeAttrs } from "./attrs";
 
 enum NodeGroups {
-  editor = "editor",
+  track = "track",
   block = "block",
   segment = "segment",
   inline = "inline"
@@ -26,19 +21,23 @@ enum MarkGroups {
 }
 
 export const nodeSpecs: Record<string, NodeSpec> = {
-  // editors
-  document: {
+  // tracks
+  page: {
     content: NodeContent["block+"],
-    group: NodeGroups.editor,
-    attrs: createAttrs<CompositionDocumentEditorState>({ id: "", createdAt: "", updatedAt: "" }),
-    toDOM: node => ["main", mergeNodeAttrs(node, { class: "document" }), 0]
+    group: NodeGroups.track,
+    attrs: createAttrs<PageTrack>({
+      id: "",
+      createdAt: "",
+      updatedAt: ""
+    }),
+    toDOM: node => ["main", mergeNodeAttrs(node, { class: "page" }), 0]
   },
 
   // blocks
   paragraph: {
     content: NodeContent["segment+"],
     group: NodeGroups.block,
-    attrs: createAttrs<CompositionParagraphBlockState>({ id: "", createdAt: "", updatedAt: "" }),
+    attrs: createAttrs<ParagraphBlock>({ id: "", createdAt: "", updatedAt: "" }),
     parseDOM: [
       { tag: "p", getAttrs: createAttrsDOMParser("paragraph") },
       { tag: "p", priority: 1 }
@@ -53,7 +52,7 @@ export const nodeSpecs: Record<string, NodeSpec> = {
     inline: true,
     content: NodeContent["inline*"],
     group: NodeGroups.segment,
-    attrs: createAttrs<CompositionVoiceSegmentState>({
+    attrs: createAttrs<VoiceSegment>({
       id: "",
       voiceId: "",
       trackId: "",
@@ -79,7 +78,7 @@ export const markSpecs: Record<string, MarkSpec> = {
   // annotation
   bold: {
     group: MarkGroups.annotation,
-    attrs: createAttrs<CompositionBoldAnnotationState>({}),
+    attrs: createAttrs<BoldAnnotation>({}),
     parseDOM: [
       { tag: "b", getAttrs: createAttrsDOMParser("bold") },
       { tag: "b" },
@@ -91,8 +90,8 @@ export const markSpecs: Record<string, MarkSpec> = {
   }
 };
 
-export const documentSchema = new Schema({
+export const pageSchema = new Schema({
   nodes: nodeSpecs,
   marks: markSpecs,
-  topNode: "document"
+  topNode: "page"
 });
