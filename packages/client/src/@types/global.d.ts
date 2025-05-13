@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
-import type { EditorCommand } from "../composition/prosemirror/command/chain";
+
+import { EditorCommand } from "../composition/prosemirror/command/EditorCommand";
 
 declare global {
   interface Commands<T = EditorCommand> {}

@@ -1,8 +1,9 @@
 import { history, redo, undo } from "prosemirror-history";
 import { Extension } from "../Extension";
 import { KeymapPlugin } from "../../prosemirror/plugin/KeymapPlugin";
-import { EditorCommand, convertCommand } from "../../prosemirror/command/chain";
+import { convertCommand } from "../../prosemirror/command/chain";
 import { isMac } from "../../utilities/browser";
+import { EditorCommand } from "../../prosemirror/command/EditorCommand";
 
 export class HistoryExtension extends Extension {
   name = "history";
@@ -14,7 +15,7 @@ export class HistoryExtension extends Extension {
   initializePlugins = () => {
     return {
       history: history(),
-      "history-keymap": new KeymapPlugin({
+      "history-keymap": new KeymapPlugin(this.editor, {
         "Mod-z": this.editor.commands.undo(),
         [isMac ? "Shift-Mod-z" : "Mod-y"]: this.editor.commands.redo()
       })
