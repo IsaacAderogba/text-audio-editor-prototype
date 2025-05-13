@@ -1,7 +1,16 @@
 import { Command, EditorState, Transaction } from "prosemirror-state";
 import { EditorView } from "prosemirror-view";
+import type { DocumentEditor } from "../DocumentEditor";
+
+export type EditorCommand = (
+  editor: DocumentEditor,
+  state: EditorState,
+  dispatch?: (tr: Transaction) => void,
+  view?: EditorView
+) => boolean;
 
 export interface CommandChainProps {
+  editor: DocumentEditor;
   commands: Commands;
   view: EditorView;
   dispatchMode?: "all" | "first";
@@ -9,6 +18,7 @@ export interface CommandChainProps {
 }
 
 export function createCommandChain({
+  editor,
   dispatchMode = "all",
   commands,
   view,
@@ -43,11 +53,11 @@ export function createCommandChain({
     updateChainedState();
     switch (dispatchMode) {
       case "all":
-        results.push(fn(state, dispatch, view));
+        results.push(fn(editor, state, dispatch, view));
         return chain;
       case "first":
         if (results.some(Boolean)) return chain;
-        results.push(fn(state, dispatch, view));
+        results.push(fn(editor, state, dispatch, view));
         return chain;
     }
   };
@@ -66,7 +76,7 @@ export function createCommandChain({
   return chain;
 }
 
-export function makeCommandChainable<C extends Command>(fn: C): () => Command {
+export function makeCommandChainable<C extends Command>(fn: C): () => EditorCommand {
   return makeChainableCommand(() => fn);
 }
 
@@ -111,9 +121,9 @@ export function createChainableState({ state, tr }: ChainableStateProps): Editor
   };
 }
 
-export type ChainableCommand = (...args: any[]) => Command;
+export type ChainableCommand = (...args: any[]) => EditorCommand;
 export type CommandChain<T extends Commands> = {
-  command: (fn: Command) => CommandChain<T>;
+  command: (fn: EditorCommand) => CommandChain<T>;
   run: () => boolean;
   // @ts-expect-error - fixme
 } & { [K in keyof T]: (...a: Parameters<T[K]>) => CommandChain<T> };

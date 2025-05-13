@@ -1,10 +1,10 @@
 import { Command, Plugin } from "prosemirror-state";
-import type { Editor } from "../prosemirror/DocumentEditor";
+import type { DocumentEditor } from "../prosemirror/DocumentEditor";
 
 export abstract class Extension {
   abstract name: string;
 
-  private _editor?: Editor;
+  private _editor?: DocumentEditor;
   get editor() {
     if (!this._editor) {
       throw new Error("Cannot access `editor` before it has been bound.");
@@ -12,7 +12,7 @@ export abstract class Extension {
     return this._editor;
   }
 
-  bind = (editor: Editor) => {
+  bind = (editor: DocumentEditor) => {
     this._editor = editor;
     return this;
   };
