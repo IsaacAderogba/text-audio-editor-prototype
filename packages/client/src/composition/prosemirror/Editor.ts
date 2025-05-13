@@ -2,7 +2,7 @@ import { EditorState, EditorStateConfig, Plugin, Transaction } from "prosemirror
 import { DirectEditorProps, EditorView } from "prosemirror-view";
 import { Extension } from "../extensions/Extension";
 import { CommandChainProps, createCommandChain } from "./command/chain";
-import type { CompositionObservable } from "../observables/CompositionTrackObservable";
+import type { CompositionObservable } from "../observables/CompositionObservable";
 
 interface EditorEvents {
   change: (data: { state: EditorState; transaction: Transaction }) => void;

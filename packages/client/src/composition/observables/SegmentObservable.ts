@@ -2,7 +2,7 @@ import { Segment } from "@taep/core";
 import { merge } from "lodash-es";
 import { DeepPartial } from "../../utilities/types";
 import { makeAutoObservable, toJS } from "mobx";
-import { CompositionObservable } from "./CompositionTrackObservable";
+import { CompositionObservable } from "./CompositionObservable";
 
 export class SegmentObservable {
   private composition: CompositionObservable;
@@ -23,5 +23,3 @@ export class SegmentObservable {
     return toJS(this.state);
   }
 }
-
-// todo - find a way to represent this inside of DocumentTrackObservable and MediaTrackObservable

@@ -2,7 +2,7 @@ import { Metadata } from "@taep/core";
 import { merge } from "lodash-es";
 import { toJS } from "mobx";
 import { DeepPartial } from "../../utilities/types";
-import type { CompositionObservable } from "./CompositionTrackObservable";
+import type { CompositionObservable } from "./CompositionObservable";
 
 export class MetadataObservable {
   private composition: CompositionObservable;
