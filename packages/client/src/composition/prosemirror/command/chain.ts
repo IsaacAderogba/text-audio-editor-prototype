@@ -4,7 +4,7 @@ import { EditorCommand } from "./EditorCommand";
 
 export interface CommandChainProps {
   editor: DocumentEditor;
-  dispatchMode?: "all" | "first";
+  dispatchMode?: "all" | "first" | "test";
   tr?: Transaction;
 }
 
@@ -16,9 +16,12 @@ export function createCommandChain({
   const state = createChainableState({ tr, state: editor.view.state });
   const updateChainedState = () => state.tr; // causes the getter to update
 
-  const dispatch = (dispatchedTr: Transaction) => {
-    if (dispatchedTr !== tr) throw new Error("Mismatched transaction");
-  };
+  const shouldDispatch = ["all", "first"].includes(dispatchMode);
+  const dispatch = shouldDispatch
+    ? (dispatchedTr: Transaction) => {
+        if (dispatchedTr !== tr) throw new Error("Mismatched transaction");
+      }
+    : undefined;
 
   const results: boolean[] = [];
   const chain = {} as CommandChain<Commands>;
@@ -28,6 +31,7 @@ export function createCommandChain({
       updateChainedState();
       switch (dispatchMode) {
         case "all":
+        case "test":
           results.push(fn(...args)(state, dispatch, editor.view, editor));
           return chain;
         case "first":
@@ -42,6 +46,7 @@ export function createCommandChain({
     updateChainedState();
     switch (dispatchMode) {
       case "all":
+      case "test":
         results.push(fn(state, dispatch, editor.view, editor));
         return chain;
       case "first":
@@ -56,6 +61,7 @@ export function createCommandChain({
 
     switch (dispatchMode) {
       case "all":
+      case "test":
         return results.every(Boolean);
       case "first":
         return results.some(Boolean);

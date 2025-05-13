@@ -4,7 +4,7 @@ import type { DocumentEditor } from "../DocumentEditor";
 
 export type EditorCommand = (
   state: EditorState,
-  dispatch: (tr: Transaction) => void,
+  dispatch: undefined | ((tr: Transaction) => void),
   view: undefined | EditorView,
   editor: DocumentEditor
 ) => boolean;

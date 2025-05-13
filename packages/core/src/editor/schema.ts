@@ -9,6 +9,13 @@ export enum NodeGroup {
   inline = "inline"
 }
 
+export enum NodeName {
+  page = "page",
+  paragraph = "paragraph",
+  voice = "voice",
+  text = "text"
+}
+
 export enum NodeContent {
   "block+" = "block+",
   "segment+" = "segment+",
@@ -20,7 +27,11 @@ export enum MarkGroup {
   annotation = "annotation" // bolds, italics, etc...
 }
 
-export const nodeSpecs: Record<string, NodeSpec> = {
+export enum MarkName {
+  bold = "bold"
+}
+
+export const nodeSpecs: Record<`${NodeName}`, NodeSpec> = {
   // tracks
   page: {
     content: NodeContent["block+"],
@@ -74,7 +85,7 @@ export const nodeSpecs: Record<string, NodeSpec> = {
   }
 };
 
-export const markSpecs: Record<string, MarkSpec> = {
+export const markSpecs: Record<`${MarkName}`, MarkSpec> = {
   // annotation
   bold: {
     group: MarkGroup.annotation,

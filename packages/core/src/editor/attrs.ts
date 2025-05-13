@@ -1,6 +1,10 @@
 import { AttributeSpec, Mark, Node } from "prosemirror-model";
 import { Annotation, Block, Inline, DocumentSegment, DocumentTrack } from "../composition";
 
+export const setAttrs = <T extends Annotation | Inline | DocumentSegment | Block | DocumentTrack>(
+  attrs: T["attrs"]
+) => attrs;
+
 export const createAttrs = <
   T extends Annotation | Inline | DocumentSegment | Block | DocumentTrack
 >(
