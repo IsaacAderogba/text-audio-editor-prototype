@@ -22,12 +22,6 @@ interface MediaTrackAttrs {
   updatedAt: string;
 }
 
-export interface Metadata {
-  fps: number;
-  width: number;
-  height: number;
-}
-
 export type MediaSegment = FrameSegment | SampleSegment;
 
 export interface FrameSegment {

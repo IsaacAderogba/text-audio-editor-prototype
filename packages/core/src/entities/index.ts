@@ -1,4 +1,4 @@
-import { CompositionState } from "../composition";
+import { Composition } from "../composition";
 import { DeepPartial } from "../utilities/types";
 
 export type EntitiesAPI = {
@@ -39,7 +39,7 @@ export interface ChapterEntity {
   type: "chapter";
   projectId: ProjectEntity["id"];
 
-  compositionState: CompositionState;
+  composition: Composition;
 
   createdAt: string;
   updatedAt: string;

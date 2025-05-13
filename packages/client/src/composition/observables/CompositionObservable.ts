@@ -1,35 +1,35 @@
-import { CompositionState } from "@taep/core";
-import { makeAutoObservable } from "mobx";
-import { MetadataObservable } from "./MetadataObservable";
-import { MediaTrackObservable, DocumentTrackObservable, TrackObservable } from "./TrackObservable";
+import { Composition } from "@taep/core";
+import { makeAutoObservable, toJS } from "mobx";
+import { omit } from "lodash-es";
+import { DocumentSegmentObservable, DocumentTrackObservable } from "./DocumentTrackObservable";
+import { MediaSegmentObservable, MediaTrackObservable } from "./MediaTrackObservable";
+
+export type TrackObservable = DocumentTrackObservable | MediaTrackObservable;
+export type SegmentObservable = DocumentSegmentObservable | MediaSegmentObservable;
 
 export class CompositionObservable {
-  state: {
-    tracks: Record<string, TrackObservable>;
-    metadata: MetadataObservable;
-  };
+  state: Omit<Composition, "content">;
+  tracks: Record<string, TrackObservable> = {};
 
-  constructor(state: CompositionState) {
+  constructor(state: Composition) {
     makeAutoObservable(this);
 
-    const tracks: Record<string, TrackObservable> = {};
-    Object.values(state.tracks).forEach(track => {
+    this.state = omit(state, "content");
+    Object.values(state.content).forEach(track => {
       if (track.type === "page") {
-        tracks[track.attrs.id] = new DocumentTrackObservable(this, track);
+        this.tracks[track.attrs.id] = new DocumentTrackObservable(this, track);
       } else {
-        tracks[track.attrs.id] = new MediaTrackObservable(this, track);
+        this.tracks[track.attrs.id] = new MediaTrackObservable(this, track);
       }
     });
-
-    this.state = { tracks, metadata: new MetadataObservable(this, state.metadata) };
   }
 
-  toJSON(): CompositionState {
-    const tracks: CompositionState["tracks"] = {};
-    Object.values(this.state.tracks).forEach(track => {
-      tracks[track.state.attrs.id] = track.toJSON();
+  toJSON(): Composition {
+    const content: Composition["content"] = {};
+    Object.values(this.tracks).forEach(track => {
+      content[track.state.attrs.id] = track.toJSON();
     });
 
-    return { tracks, metadata: this.state.metadata.toJSON() };
+    return { ...toJS(this.state), content };
   }
 }

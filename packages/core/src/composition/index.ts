@@ -1,11 +1,18 @@
 import { DocumentSegment, DocumentTrack } from "./DocumentTrack";
-import { Metadata, MediaTrack, MediaSegment } from "./MediaTrack";
+import { MediaTrack, MediaSegment } from "./MediaTrack";
 
 export type Track = DocumentTrack | MediaTrack;
 export type Segment = MediaSegment | DocumentSegment;
-export interface CompositionState {
-  tracks: Record<string, Track>;
-  metadata: Metadata;
+export interface Composition {
+  type: "composition";
+  attrs: CompositionAttrs;
+  content: Record<string, Track>;
+}
+
+export interface CompositionAttrs {
+  fps: number;
+  width: number;
+  height: number;
 }
 
 export * from "./DocumentTrack";

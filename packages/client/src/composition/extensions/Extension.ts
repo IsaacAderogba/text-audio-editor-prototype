@@ -1,5 +1,5 @@
 import { Command, Plugin } from "prosemirror-state";
-import type { Editor } from "../prosemirror/Editor";
+import type { Editor } from "../prosemirror/DocumentEditor";
 
 export abstract class Extension {
   abstract name: string;

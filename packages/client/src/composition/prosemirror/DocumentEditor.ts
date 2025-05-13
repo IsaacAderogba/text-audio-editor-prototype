@@ -1,8 +1,8 @@
 import { EditorState, EditorStateConfig, Plugin, Transaction } from "prosemirror-state";
 import { DirectEditorProps, EditorView } from "prosemirror-view";
 import { Extension } from "../extensions/Extension";
+import type { DocumentTrackObservable } from "../observables/DocumentTrackObservable";
 import { CommandChainProps, createCommandChain } from "./command/chain";
-import type { CompositionObservable } from "../observables/CompositionObservable";
 
 interface EditorEvents {
   change: (data: { state: EditorState; transaction: Transaction }) => void;
@@ -12,19 +12,19 @@ interface EditorEvents {
 
 interface EditorOptions extends Omit<EditorStateConfig, "plugins"> {
   extensions: Extension[];
-  context: EditorContext;
+  context: DocumentContext;
 }
 
-interface EditorContext {
-  composition: CompositionObservable;
+interface DocumentContext {
+  track: DocumentTrackObservable;
 }
 
-export class Editor {
+export class DocumentEditor {
   private listeners = new Map<string, Set<Function>>();
   private extensions = new Map<string, Extension>();
-  private state: EditorState;
+  public state: EditorState;
   public commands = {} as Commands;
-  public context: EditorContext;
+  public context: DocumentContext;
 
   constructor({ context, extensions, ...stateOptions }: EditorOptions) {
     this.context = context;

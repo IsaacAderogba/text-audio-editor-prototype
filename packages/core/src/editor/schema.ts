@@ -2,20 +2,20 @@ import { MarkSpec, NodeSpec, Schema } from "prosemirror-model";
 import { BoldAnnotation, PageTrack, ParagraphBlock, VoiceSegment } from "../composition";
 import { createAttrs, createAttrsDOMParser, mergeMarkAttrs, mergeNodeAttrs } from "./attrs";
 
-enum NodeGroups {
+export enum NodeGroup {
   track = "track",
   block = "block",
   segment = "segment",
   inline = "inline"
 }
 
-enum NodeContent {
+export enum NodeContent {
   "block+" = "block+",
   "segment+" = "segment+",
   "inline*" = "inline*"
 }
 
-enum MarkGroups {
+export enum MarkGroup {
   decoration = "decoration", // search highlighting, etc..
   annotation = "annotation" // bolds, italics, etc...
 }
@@ -24,7 +24,7 @@ export const nodeSpecs: Record<string, NodeSpec> = {
   // tracks
   page: {
     content: NodeContent["block+"],
-    group: NodeGroups.track,
+    group: NodeGroup.track,
     attrs: createAttrs<PageTrack>({
       id: "",
       createdAt: "",
@@ -36,7 +36,7 @@ export const nodeSpecs: Record<string, NodeSpec> = {
   // blocks
   paragraph: {
     content: NodeContent["segment+"],
-    group: NodeGroups.block,
+    group: NodeGroup.block,
     attrs: createAttrs<ParagraphBlock>({ id: "", createdAt: "", updatedAt: "" }),
     parseDOM: [
       { tag: "p", getAttrs: createAttrsDOMParser("paragraph") },
@@ -51,7 +51,7 @@ export const nodeSpecs: Record<string, NodeSpec> = {
   voice: {
     inline: true,
     content: NodeContent["inline*"],
-    group: NodeGroups.segment,
+    group: NodeGroup.segment,
     attrs: createAttrs<VoiceSegment>({
       id: "",
       voiceId: "",
@@ -70,14 +70,14 @@ export const nodeSpecs: Record<string, NodeSpec> = {
   // inlines
   text: {
     inline: true,
-    group: NodeGroups.inline
+    group: NodeGroup.inline
   }
 };
 
 export const markSpecs: Record<string, MarkSpec> = {
   // annotation
   bold: {
-    group: MarkGroups.annotation,
+    group: MarkGroup.annotation,
     attrs: createAttrs<BoldAnnotation>({}),
     parseDOM: [
       { tag: "b", getAttrs: createAttrsDOMParser("bold") },
