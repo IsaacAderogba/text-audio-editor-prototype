@@ -3,7 +3,6 @@ import {
   CompositionBoldAnnotationState,
   CompositionDocumentEditorState,
   CompositionParagraphBlockState,
-  CompositionSpaceSegmentState,
   CompositionVoiceSegmentState
 } from "../composition";
 import { createAttrs, createAttrsDOMParser, mergeMarkAttrs, mergeNodeAttrs } from "./attrs";
@@ -69,25 +68,6 @@ export const nodeSpecs: Record<string, NodeSpec> = {
       return ["span", mergeNodeAttrs(node, { class: "voice" }), 0];
     }
   },
-  space: {
-    atom: true,
-    inline: true,
-    group: NodeGroups.segment,
-    attrs: createAttrs<CompositionSpaceSegmentState>({
-      id: "",
-      trackId: "",
-      from: 0,
-      duration: 0,
-      playbackRate: 1,
-      createdAt: "",
-      updatedAt: ""
-    }),
-    parseDOM: [{ tag: "span", getAttrs: createAttrsDOMParser("space") }],
-    toDOM: node => {
-      return ["span", mergeNodeAttrs(node, { class: "space" }), 0];
-    }
-  },
-
   // inlines
   text: {
     inline: true,

@@ -40,9 +40,7 @@ export interface CompositionParagraphBlockAttrs {
  * Segment States
  */
 export type EditorSegmentType = CompositionEditorSegmentState["type"];
-export type CompositionEditorSegmentState =
-  | CompositionVoiceSegmentState
-  | CompositionSpaceSegmentState;
+export type CompositionEditorSegmentState = CompositionVoiceSegmentState;
 
 export type CompositionVoiceSegmentState = {
   type: "voice";
@@ -53,14 +51,6 @@ export type CompositionVoiceSegmentState = {
 interface CompositionVoiceSegmentAttrs extends SegmentAttrs {
   voiceId: string;
 }
-
-export type CompositionSpaceSegmentState = {
-  type: "space";
-  attrs: CompositionSpaceSegmentAttrs;
-  content: CompositionEditorInlineState[];
-};
-
-interface CompositionSpaceSegmentAttrs extends SegmentAttrs {}
 
 /**
  * InlineStates
