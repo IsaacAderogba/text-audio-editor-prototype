@@ -1,7 +1,8 @@
-import { Command, Plugin, PluginSpec } from "prosemirror-state";
 import { keydownHandler } from "prosemirror-keymap";
+import { Plugin, PluginSpec } from "prosemirror-state";
+import { EditorCommand } from "../command/chain";
 
-export type Keymap = Record<string, Command>;
+export type Keymap = Record<string, EditorCommand>;
 type KeymapState = undefined;
 
 export class KeymapPlugin extends Plugin<KeymapState> {

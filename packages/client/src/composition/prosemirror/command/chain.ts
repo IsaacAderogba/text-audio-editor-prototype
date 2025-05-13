@@ -3,16 +3,14 @@ import { EditorView } from "prosemirror-view";
 import type { DocumentEditor } from "../DocumentEditor";
 
 export type EditorCommand = (
-  editor: DocumentEditor,
   state: EditorState,
-  dispatch?: (tr: Transaction) => void,
-  view?: EditorView
+  dispatch: (tr: Transaction) => void,
+  view: undefined | EditorView,
+  editor: DocumentEditor
 ) => boolean;
 
 export interface CommandChainProps {
   editor: DocumentEditor;
-  commands: Commands;
-  view: EditorView;
   dispatchMode?: "all" | "first";
   tr?: Transaction;
 }
@@ -20,11 +18,9 @@ export interface CommandChainProps {
 export function createCommandChain({
   editor,
   dispatchMode = "all",
-  commands,
-  view,
-  tr = view.state.tr
+  tr = editor.view.state.tr
 }: CommandChainProps) {
-  const state = createChainableState({ tr, state: view.state });
+  const state = createChainableState({ tr, state: editor.view.state });
   const updateChainedState = () => state.tr; // causes the getter to update
 
   const dispatch = (dispatchedTr: Transaction) => {
@@ -34,16 +30,16 @@ export function createCommandChain({
   const results: boolean[] = [];
   const chain = {} as CommandChain<Commands>;
 
-  Object.entries(commands).forEach(([name, fn]) => {
+  Object.entries(editor.commands).forEach(([name, fn]) => {
     chain[name as keyof Commands] = (...args) => {
       updateChainedState();
       switch (dispatchMode) {
         case "all":
-          results.push(fn(...args)(state, dispatch, view));
+          results.push(fn(...args)(state, dispatch, editor.view, editor));
           return chain;
         case "first":
           if (results.some(Boolean)) return chain;
-          results.push(fn(...args)(state, dispatch, view));
+          results.push(fn(...args)(state, dispatch, editor.view, editor));
           return chain;
       }
     };
@@ -53,17 +49,17 @@ export function createCommandChain({
     updateChainedState();
     switch (dispatchMode) {
       case "all":
-        results.push(fn(editor, state, dispatch, view));
+        results.push(fn(state, dispatch, editor.view, editor));
         return chain;
       case "first":
         if (results.some(Boolean)) return chain;
-        results.push(fn(editor, state, dispatch, view));
+        results.push(fn(state, dispatch, editor.view, editor));
         return chain;
     }
   };
 
   chain.run = () => {
-    if (!tr.getMeta("preventDispatch")) view.dispatch(tr);
+    if (!tr.getMeta("preventDispatch")) editor.view.dispatch(tr);
 
     switch (dispatchMode) {
       case "all":
@@ -76,11 +72,11 @@ export function createCommandChain({
   return chain;
 }
 
-export function makeCommandChainable<C extends Command>(fn: C): () => EditorCommand {
-  return makeChainableCommand(() => fn);
+export function convertCommand<C extends Command>(fn: C): () => EditorCommand {
+  return chainCommand(() => fn);
 }
 
-export function makeChainableCommand<C extends ChainableCommand>(fn: C) {
+export function chainCommand<C extends ChainableCommand>(fn: C) {
   return (...args: Parameters<C>) => fn(...args);
 }
 

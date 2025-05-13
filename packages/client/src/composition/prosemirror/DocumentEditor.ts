@@ -33,20 +33,18 @@ export class DocumentEditor {
     }
 
     let commands = {} as Commands;
+    this.extensions.forEach(extension => {
+      const extensionCommands = extension.initializeCommands?.();
+      if (extensionCommands) commands = { ...commands, ...extensionCommands };
+    });
+    this.commands = commands;
+
     const plugins: Plugin[] = [];
     this.extensions.forEach(extension => {
       const extensionPlugins = extension.initializePlugins?.();
-      if (extensionPlugins) {
-        plugins.push(...Object.values(extensionPlugins));
-      }
-
-      const extensionCommands = extension.initializeCommands?.();
-      if (extensionCommands) {
-        commands = { ...commands, ...extensionCommands };
-      }
+      if (extensionPlugins) plugins.push(...Object.values(extensionPlugins));
     });
 
-    this.commands = commands;
     this.state = EditorState.create({ ...stateOptions, plugins });
   }
 
@@ -60,7 +58,7 @@ export class DocumentEditor {
   }
 
   public chain = (props: Pick<CommandChainProps, "dispatchMode" | "tr"> = {}) =>
-    createCommandChain({ ...props, commands: this.commands, view: this.view });
+    createCommandChain({ ...props, editor: this });
 
   public on = <E extends keyof EditorEvents>(event: E, cb: EditorEvents[E]) => {
     if (!this.listeners.has(event)) {

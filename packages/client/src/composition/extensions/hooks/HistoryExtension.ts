@@ -1,33 +1,29 @@
-import { history, redo as _redo, undo as _undo } from "prosemirror-history";
+import { history, redo, undo } from "prosemirror-history";
 import { Extension } from "../Extension";
 import { KeymapPlugin } from "../../prosemirror/plugin/KeymapPlugin";
-import { Command } from "prosemirror-state";
-import { makeCommandChainable } from "../../prosemirror/command/chain";
+import { EditorCommand, convertCommand } from "../../prosemirror/command/chain";
 import { isMac } from "../../utilities/browser";
 
 export class HistoryExtension extends Extension {
   name = "history";
 
+  initializeCommands = (): HistoryCommands<EditorCommand> => {
+    return { undo: convertCommand(undo), redo: convertCommand(redo) };
+  };
+
   initializePlugins = () => {
     return {
       history: history(),
       "history-keymap": new KeymapPlugin({
-        "Mod-z": undo(),
-        [isMac ? "Shift-Mod-z" : "Mod-y"]: redo()
+        "Mod-z": this.editor.commands.undo(),
+        [isMac ? "Shift-Mod-z" : "Mod-y"]: this.editor.commands.redo()
       })
     };
   };
-
-  initializeCommands = (): HistoryCommands<Command> => {
-    return { undo, redo };
-  };
 }
 
-export type Undo<T = Command> = () => T;
-export const undo: Undo = makeCommandChainable(_undo);
-
-export type Redo<T = Command> = () => T;
-export const redo: Undo = makeCommandChainable(_redo);
+export type Undo<T = EditorCommand> = () => T;
+export type Redo<T = EditorCommand> = () => T;
 
 type HistoryCommands<T> = {
   undo: Undo<T>;

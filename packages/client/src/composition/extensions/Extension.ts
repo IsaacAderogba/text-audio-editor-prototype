@@ -1,5 +1,6 @@
-import { Command, Plugin } from "prosemirror-state";
+import { Plugin } from "prosemirror-state";
 import type { DocumentEditor } from "../prosemirror/DocumentEditor";
+import { EditorCommand } from "../prosemirror/command/chain";
 
 export abstract class Extension {
   abstract name: string;
@@ -18,5 +19,5 @@ export abstract class Extension {
   };
 
   initializePlugins?(): Record<string, Plugin>;
-  initializeCommands?(): Record<string, (...args: any[]) => Command>;
+  initializeCommands?(): Record<string, (...args: any[]) => EditorCommand>;
 }
