@@ -3,6 +3,15 @@ import { omit } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
 import { DocumentEditor } from "../prosemirror/DocumentEditor";
 import type { CompositionObservable } from "./CompositionObservable";
+import { AttrsExtension } from "../extensions/hooks/AttrsExtension";
+import { CollabExtension } from "../extensions/hooks/CollabExtension";
+import { CommandsExtension } from "../extensions/hooks/CommandsExtension";
+import { HistoryExtension } from "../extensions/hooks/HistoryExtension";
+import { BoldExtension } from "../extensions/marks/BoldExtension";
+import { PageExtension } from "../extensions/nodes/PageExtension";
+import { ParagraphExtension } from "../extensions/nodes/ParagraphExtension";
+import { TextExtension } from "../extensions/nodes/TextExtension";
+import { VoiceExtension } from "../extensions/nodes/VoiceExtension";
 
 export class DocumentTrackObservable {
   composition: CompositionObservable;
@@ -19,7 +28,17 @@ export class DocumentTrackObservable {
     this.editor = new DocumentEditor({
       doc: pageSchema.nodeFromJSON(state),
       extensions: [
-        // define all the extensions here...
+        new AttrsExtension(),
+        new CollabExtension(),
+        new CommandsExtension(),
+        new HistoryExtension(),
+
+        new BoldExtension(),
+
+        new PageExtension(),
+        new ParagraphExtension(),
+        new VoiceExtension(),
+        new TextExtension()
       ],
       context: { track: this }
     });

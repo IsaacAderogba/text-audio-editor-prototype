@@ -88,9 +88,9 @@ export class DocumentEditor {
         ...options.view,
         state: this.state,
         dispatchTransaction: transaction => {
-          const state = view.state.apply(transaction);
-          view.updateState(state);
-          this.emit("change", { state, transaction });
+          this.state = this.state.apply(transaction);
+          view.updateState(this.state);
+          this.emit("change", { state: this.state, transaction });
         }
       }
     );

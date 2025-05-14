@@ -1,11 +1,11 @@
 import { history, redo, undo } from "prosemirror-history";
-import { Extension } from "../Extension";
+import { EditorCommand } from "../../prosemirror/command/EditorCommand";
 import { KeymapPlugin } from "../../prosemirror/plugin/KeymapPlugin";
 import { convertCommand } from "../../prosemirror/transform/chain";
 import { isMac } from "../../utilities/browser";
-import { EditorCommand } from "../../prosemirror/command/EditorCommand";
+import { HookExtension } from "../Extension";
 
-export class HistoryExtension extends Extension {
+export class HistoryExtension extends HookExtension {
   name = "history";
 
   initializeCommands = (): HistoryCommands<EditorCommand> => {

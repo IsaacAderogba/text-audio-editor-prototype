@@ -1,9 +1,10 @@
 import { BoldAnnotationAttrs, MarkName } from "@taep/core";
-import { Extension } from "../Extension";
-import { KeymapPlugin } from "../../prosemirror/plugin/KeymapPlugin";
+import { CSS } from "../../../utilities/stitches";
 import { EditorCommand } from "../../prosemirror/command/EditorCommand";
+import { KeymapPlugin } from "../../prosemirror/plugin/KeymapPlugin";
+import { MarkExtension } from "../Extension";
 
-export class BoldExtension extends Extension {
+export class BoldExtension extends MarkExtension {
   name = MarkName.bold;
 
   initializeCommands = (): BoldCommands<EditorCommand> => {
@@ -20,6 +21,11 @@ export class BoldExtension extends Extension {
         "Mod-b": this.editor.commands.toggleBold({})
       })
     };
+  };
+
+  initializeCSS = () => {
+    const css: CSS = { display: "inline", fontWeight: "$bold" };
+    return { compact: css, default: css };
   };
 }
 

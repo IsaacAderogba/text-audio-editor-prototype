@@ -1,11 +1,11 @@
-import { v4 } from "uuid";
-import { Plugin } from "prosemirror-state";
-import { Extension } from "../Extension";
-import { ChainableTransaction } from "../../prosemirror/transform/transaction";
-import { findChangedNodes } from "../../prosemirror/state/nodes";
 import { Block, DocumentSegment, DocumentTrack, getAttrs, NodeGroup } from "@taep/core";
+import { Plugin } from "prosemirror-state";
+import { v4 } from "uuid";
+import { findChangedNodes } from "../../prosemirror/state/nodes";
+import { ChainableTransaction } from "../../prosemirror/transform/transaction";
+import { HookExtension } from "../Extension";
 
-export class AttrsExtension extends Extension {
+export class AttrsExtension extends HookExtension {
   name = "attrs";
 
   initializePlugins = () => {
