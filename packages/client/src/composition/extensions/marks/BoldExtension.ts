@@ -8,29 +8,27 @@ export class BoldExtension extends Extension {
 
   initializeCommands = (): BoldCommands<EditorCommand> => {
     return {
-      toggleBold: attrs => () => {
-        return null;
+      toggleBold: attrs => {
+        return this.editor.commands.toggleMark({ type: "bold", attrs });
       }
     };
   };
 
   initializePlugins = () => {
     return {
-      "history-keymap": new KeymapPlugin(this.editor, {
+      "bold-keymap": new KeymapPlugin(this.editor, {
         "Mod-b": this.editor.commands.toggleBold({})
       })
     };
   };
 }
 
-export type Bold<T = EditorCommand> = (attrs: Partial<BoldAnnotationAttrs>) => T;
+export type ToggleBold<T = EditorCommand> = (attrs: Partial<BoldAnnotationAttrs>) => T;
 
 type BoldCommands<T> = {
-  toggleBold: Bold<T>;
+  toggleBold: ToggleBold<T>;
 };
 
 declare global {
   interface Commands<T> extends BoldCommands<T> {}
 }
-
-// so, need to add the primitive commands
