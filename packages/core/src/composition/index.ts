@@ -2,6 +2,7 @@ import { DocumentSegment, DocumentTrack } from "./DocumentTrack";
 import { MediaTrack, MediaSegment } from "./MediaTrack";
 
 export type Track = DocumentTrack | MediaTrack;
+export type TrackChange = DocumentTrackChange | MediaTrackChange;
 export type DocumentTrackChange = {
   version: number;
   clientIds: string[];
@@ -28,8 +29,6 @@ export interface CompositionAttrs {
 
   changes: Record<string, TrackChange[]>;
 }
-
-type TrackChange = DocumentTrackChange | MediaTrackChange;
 
 export * from "./DocumentTrack";
 export * from "./MediaTrack";

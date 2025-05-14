@@ -14,13 +14,19 @@
   "dependencies": {
     "@taep/core": "1.0.0",
     "@trpc/server": "^11.1.0",
+    "@types/ws": "^8.18.1",
+    "cookie-parser": "^1.4.7",
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "lodash-es": "^4.17.21",
     "socket.io": "^4.8.1",
-    "uuid": "^11.1.0"
+    "uuid": "^11.1.0",
+    "ws": "^8.18.2",
+    "zod": "^3.24.4"
   },
   "devDependencies": {
+    "@types/cookie-parser": "^1.4.8",
+    "@types/express": "^5.0.1",
     "tsx": "^4.19.3"
   }
 }

@@ -17,7 +17,7 @@ async function writeJSONFile<T>(pathname: string, data: T) {
   return data;
 }
 
-const createDatabaseAdapter = <T extends keyof EntityRecord>(
+export const createDatabaseAdapter = <T extends keyof EntityRecord>(
   type: T
 ): EntityAPI<EntityRecord[T]> => {
   const entityDir = path.join("..", __dirname, "database", type);
@@ -45,16 +45,6 @@ const createDatabaseAdapter = <T extends keyof EntityRecord>(
         return [];
       }
     },
-    upsertMany: async inputs => {
-      const entities: EntityRecord[T][] = [];
-
-      for (const entity of inputs) {
-        await writeJSONFile(path.join(entityDir, `${entity.id}.json`), entity);
-        entities.push(entity);
-      }
-
-      return entities;
-    },
     create: async entity => {
       await writeJSONFile(path.join(entityDir, `${entity.id}.json`), entity);
       return entity;
@@ -80,6 +70,3 @@ const createDatabaseAdapter = <T extends keyof EntityRecord>(
     }
   };
 };
-
-export const projectsAdapter = createDatabaseAdapter("projects");
-export const chaptersAdapter = createDatabaseAdapter("chapters");
