@@ -1,6 +1,6 @@
 import { Command, EditorState, Transaction } from "prosemirror-state";
 import type { DocumentEditor } from "../DocumentEditor";
-import { EditorCommand } from "./EditorCommand";
+import { EditorCommand } from "../command/EditorCommand";
 
 export interface CommandChainProps {
   editor: DocumentEditor;

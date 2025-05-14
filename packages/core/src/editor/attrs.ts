@@ -5,6 +5,10 @@ export const setAttrs = <T extends Annotation | Inline | DocumentSegment | Block
   attrs: T["attrs"]
 ) => attrs;
 
+export const getAttrs = <T extends Annotation | Inline | DocumentSegment | Block | DocumentTrack>(
+  node: Node
+): T["attrs"] => ({ ...node.attrs });
+
 export const createAttrs = <
   T extends Annotation | Inline | DocumentSegment | Block | DocumentTrack
 >(

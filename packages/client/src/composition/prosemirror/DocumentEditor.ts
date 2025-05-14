@@ -2,7 +2,7 @@ import { EditorState, EditorStateConfig, Plugin, Transaction } from "prosemirror
 import { DirectEditorProps, EditorView } from "prosemirror-view";
 import { Extension } from "../extensions/Extension";
 import type { DocumentTrackObservable } from "../observables/DocumentTrackObservable";
-import { CommandChainProps, createCommandChain } from "./command/chain";
+import { CommandChainProps, createCommandChain } from "./transform/chain";
 
 interface EditorEvents {
   change: (data: { state: EditorState; transaction: Transaction }) => void;
