@@ -1,5 +1,4 @@
 import { DocumentSegment, DocumentTrack, NodeGroup, pageSchema } from "@taep/core";
-import { omit } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
 import { DocumentEditor } from "../prosemirror/DocumentEditor";
 import type { CompositionObservable } from "./CompositionObservable";
@@ -16,7 +15,6 @@ import { VoiceExtension } from "../extensions/nodes/VoiceExtension";
 export class DocumentTrackObservable {
   composition: CompositionObservable;
 
-  state: Omit<DocumentTrack, "content">;
   editor: DocumentEditor;
   segments: Record<string, DocumentSegmentObservable> = {};
 
@@ -24,7 +22,6 @@ export class DocumentTrackObservable {
     makeAutoObservable(this);
     this.composition = composition;
 
-    this.state = omit(state, "content");
     this.editor = new DocumentEditor({
       doc: pageSchema.nodeFromJSON(state),
       extensions: [

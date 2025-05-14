@@ -38,6 +38,7 @@ export const nodeSpecs: Record<`${NodeName}`, NodeSpec> = {
     group: NodeGroup.track,
     attrs: createAttrs<PageTrack>({
       id: "",
+      latestVersion: 0,
       createdAt: "",
       updatedAt: ""
     }),

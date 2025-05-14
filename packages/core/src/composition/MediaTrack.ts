@@ -18,6 +18,7 @@ export interface AudioTrackAttrs extends MediaTrackAttrs {}
 
 interface MediaTrackAttrs {
   id: string;
+  latestVersion: number;
   createdAt: string;
   updatedAt: string;
 }

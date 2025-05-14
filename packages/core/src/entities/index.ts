@@ -6,8 +6,8 @@ export type EntitiesAPI = {
 };
 
 export type EntityRecord = {
-  projects: ProjectEntity;
-  chapters: ChapterEntity;
+  projects: Project;
+  chapters: Chapter;
 };
 
 export type EntityAPI<T extends Entity> = {
@@ -24,9 +24,9 @@ export type EntitySnapshot<T extends Entity = Entity> = {
   data: T;
 };
 
-export type Entity = ProjectEntity | ChapterEntity;
+export type Entity = Project | Chapter;
 
-export interface ProjectEntity {
+export interface Project {
   id: string;
   type: "project";
 
@@ -34,10 +34,10 @@ export interface ProjectEntity {
   updatedAt: string;
 }
 
-export interface ChapterEntity {
+export interface Chapter {
   id: string;
   type: "chapter";
-  projectId: ProjectEntity["id"];
+  projectId: Project["id"];
 
   composition: Composition;
 

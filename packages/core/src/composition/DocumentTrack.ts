@@ -14,12 +14,13 @@ export type PageTrack = {
 
 export interface PageDocumentAttrs {
   id: string;
+  latestVersion: number;
   createdAt: string;
   updatedAt: string;
 }
 
 /**
- * Block s
+ * Blocks
  */
 export type BlockType = Block["type"];
 export type Block = ParagraphBlock;
