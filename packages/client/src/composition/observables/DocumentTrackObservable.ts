@@ -13,6 +13,7 @@ import { TextExtension } from "../extensions/nodes/TextExtension";
 import { VoiceExtension } from "../extensions/nodes/VoiceExtension";
 import { v4 } from "uuid";
 import { client } from "../../utilities/trpc";
+import { DeepPartialBy } from "../../utilities/types";
 
 export class DocumentTrackObservable {
   composition: CompositionObservable;
@@ -62,8 +63,19 @@ export class DocumentTrackObservable {
 
     this.editor.state.doc.descendants(node => {
       if (!node.type.isInGroup(NodeGroup.segment)) return;
-      this.segments[node.attrs.id] = new DocumentSegmentObservable(this, node.toJSON());
+      this.segments[node.attrs.id] = new DocumentSegmentObservable(
+        composition,
+        this,
+        node.toJSON()
+      );
     });
+  }
+
+  setState(state: DeepPartialBy<Partial<Omit<DocumentTrack, "type">>, "attrs">) {
+    if (this.editor.chain().updateTrack(state).run()) {
+      this.composition.emit("trackChange", this);
+      this.composition.emit("compositionChange", this.composition);
+    }
   }
 
   toJSON(): DocumentTrack {
@@ -72,18 +84,24 @@ export class DocumentTrackObservable {
 }
 
 export class DocumentSegmentObservable<T extends DocumentSegment = DocumentSegment> {
+  composition: CompositionObservable;
   track: DocumentTrackObservable;
   state: T;
 
-  constructor(track: DocumentTrackObservable, state: T) {
+  constructor(composition: CompositionObservable, track: DocumentTrackObservable, state: T) {
     makeAutoObservable(this);
 
+    this.composition = composition;
     this.track = track;
     this.state = state;
   }
 
-  setAttrs() {
-    // update attrs using the editor...
+  setState(state: DeepPartialBy<Partial<Omit<DocumentSegment, "type">>, "attrs">) {
+    if (this.track.editor.chain().updateSegment(this.state.attrs.id, state).run()) {
+      this.composition.emit("segmentChange", this);
+      this.composition.emit("trackChange", this.track);
+      this.composition.emit("compositionChange", this.composition);
+    }
   }
 
   toJSON(): T {

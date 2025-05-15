@@ -1,5 +1,5 @@
 import { Transaction } from "prosemirror-state";
-import { EditorCommand } from "./EditorCommand";
+import { EditorCommand } from "../transform/chain";
 
 export type InsertText<T = EditorCommand> = (...args: Parameters<Transaction["insertText"]>) => T;
 export const insertText: InsertText = (...args) => {

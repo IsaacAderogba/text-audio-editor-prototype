@@ -16,8 +16,15 @@ export class MediaTrackObservable {
 
     this.state = omit(state, "content");
     Object.values(state.content).forEach(segment => {
-      this.segments[segment.attrs.id] = new MediaSegmentObservable(this, segment);
+      this.segments[segment.attrs.id] = new MediaSegmentObservable(composition, this, segment);
     });
+  }
+
+  setState(state: DeepPartial<Pick<MediaSegment, "attrs">>) {
+    merge(this.state.attrs, state.attrs, { updatedAt: new Date().toISOString() });
+
+    this.composition.emit("trackChange", this);
+    this.composition.emit("compositionChange", this.composition);
   }
 
   toJSON() {
@@ -31,18 +38,24 @@ export class MediaTrackObservable {
 }
 
 export class MediaSegmentObservable<T extends MediaSegment = MediaSegment> {
+  composition: CompositionObservable;
   track: MediaTrackObservable;
   state: T;
 
-  constructor(track: MediaTrackObservable, state: T) {
+  constructor(composition: CompositionObservable, track: MediaTrackObservable, state: T) {
     makeAutoObservable(this);
 
+    this.composition = composition;
     this.track = track;
     this.state = state;
   }
 
-  setAttrs(attrs: DeepPartial<T["attrs"]>) {
-    merge(this.state.attrs, attrs);
+  setState(state: DeepPartial<Pick<T, "attrs">>) {
+    merge(this.state.attrs, state.attrs, { updatedAt: new Date().toISOString() });
+
+    this.composition.emit("segmentChange", this);
+    this.composition.emit("trackChange", this.track);
+    this.composition.emit("compositionChange", this.composition);
   }
 
   toJSON(): T {

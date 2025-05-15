@@ -1,7 +1,7 @@
 import { TextSelection } from "prosemirror-state";
-import { EditorCommand } from "./EditorCommand";
 import { Annotation, setAttrs } from "@taep/core";
 import { markApplies } from "../state/marks";
+import { EditorCommand } from "../transform/chain";
 
 export type ToggleMark<T = EditorCommand> = (mark: Annotation) => T;
 export const toggleMark: ToggleMark = ({ type, attrs }: Annotation) => {

@@ -1,4 +1,4 @@
-import { EditorCommand } from "./EditorCommand";
+import { EditorCommand } from "../transform/chain";
 
 export type ScrollIntoView<T = EditorCommand> = () => T;
 export const scrollIntoView: ScrollIntoView = () => (state, dispatch) => {

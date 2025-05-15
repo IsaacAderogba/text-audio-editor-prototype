@@ -1,5 +1,5 @@
 import { Transaction } from "prosemirror-state";
-import { EditorCommand } from "./EditorCommand";
+import { EditorCommand } from "../transform/chain";
 
 export type ReplaceRangeWith<T = EditorCommand> = (
   ...args: Parameters<Transaction["replaceRangeWith"]>

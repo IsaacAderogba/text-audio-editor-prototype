@@ -4,17 +4,18 @@ import { Transaction } from "prosemirror-state";
 import { isAttrStep, isRangeStep } from "./steps";
 import { Step } from "prosemirror-transform";
 import { Mark, Node, NodeRange } from "prosemirror-model";
+import { NodeGroup } from "@taep/core";
 
 export interface Range {
   from: number;
   to: number;
 }
 
-export interface NodeWithRange extends Range {
+export interface RangeNode extends Range {
   node: Node;
 }
 
-export interface MarkWithRange extends Range {
+export interface RangeMark extends Range {
   mark: Mark;
 }
 
@@ -32,7 +33,7 @@ export const isAtTextEdgeOfBlock = (doc: Node, pos: number) => {
 
   while (depth >= 0) {
     const node = resolvedPos.node(depth);
-    if (node.type.name === "ttsBlock") {
+    if (node.type.isInGroup(NodeGroup.block)) {
       const nodePos = resolvedPos.before(depth);
       const contentStart = nodePos + 2;
       const contentEnd = nodePos + node.content.size;

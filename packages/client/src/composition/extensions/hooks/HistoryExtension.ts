@@ -1,7 +1,6 @@
 import { history, redo, undo } from "prosemirror-history";
-import { EditorCommand } from "../../prosemirror/command/EditorCommand";
 import { KeymapPlugin } from "../../prosemirror/plugin/KeymapPlugin";
-import { convertCommand } from "../../prosemirror/transform/chain";
+import { convertCommand, EditorCommand } from "../../prosemirror/transform/chain";
 import { isMac } from "../../utilities/browser";
 import { HookExtension } from "../Extension";
 

@@ -1,4 +1,4 @@
-import { EditorCommand } from "./EditorCommand";
+import { EditorCommand } from "../transform/chain";
 
 export type SetNodeAttributes<T = EditorCommand> = (
   pos: number,

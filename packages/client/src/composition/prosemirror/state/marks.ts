@@ -1,7 +1,7 @@
 import { Mark, MarkType, Node } from "prosemirror-model";
 import { EditorState, SelectionRange } from "prosemirror-state";
 import { isMatch } from "lodash-es";
-import { MarkWithRange } from "./ranges";
+import { RangeMark } from "./ranges";
 import { Annotation } from "@taep/core";
 
 export function isMarkActive(state: EditorState, annotation: Annotation): boolean {
@@ -18,7 +18,7 @@ export function isMarkActive(state: EditorState, annotation: Annotation): boolea
   }
 
   let selectionRange = 0;
-  const markRanges: MarkWithRange[] = [];
+  const markRanges: RangeMark[] = [];
 
   ranges.forEach(({ $from, $to }) => {
     const from = $from.pos;

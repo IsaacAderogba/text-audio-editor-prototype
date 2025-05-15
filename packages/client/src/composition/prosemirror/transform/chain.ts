@@ -1,6 +1,13 @@
 import { Command, EditorState, Transaction } from "prosemirror-state";
 import type { DocumentEditor } from "../DocumentEditor";
-import { EditorCommand } from "../command/EditorCommand";
+import { EditorView } from "prosemirror-view";
+
+export type EditorCommand = (
+  state: EditorState,
+  dispatch: undefined | ((tr: Transaction) => void),
+  view: undefined | EditorView,
+  editor: DocumentEditor
+) => boolean;
 
 export interface CommandChainProps {
   editor: DocumentEditor;

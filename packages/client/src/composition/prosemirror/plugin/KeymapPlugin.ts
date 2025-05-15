@@ -1,9 +1,9 @@
 import { base, keyName } from "w3c-keyname";
 import { Plugin, PluginSpec } from "prosemirror-state";
-import { EditorCommand } from "../command/EditorCommand";
 import { isMac } from "../../utilities/browser";
 import { EditorView } from "prosemirror-view";
 import type { DocumentEditor } from "../DocumentEditor";
+import { EditorCommand } from "../transform/chain";
 
 export type Keymap = Record<string, EditorCommand>;
 type KeymapState = undefined;

@@ -1,5 +1,5 @@
 import { Range } from "../state/ranges";
-import { EditorCommand } from "./EditorCommand";
+import { EditorCommand } from "../transform/chain";
 
 export type DeleteRange<T = EditorCommand> = (range: Range) => T;
 export const deleteRange: DeleteRange = (range: Range) => {

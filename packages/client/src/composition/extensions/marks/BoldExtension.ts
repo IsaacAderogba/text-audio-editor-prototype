@@ -1,8 +1,8 @@
 import { BoldAnnotationAttrs, MarkName } from "@taep/core";
 import { CSS } from "../../../utilities/stitches";
-import { EditorCommand } from "../../prosemirror/command/EditorCommand";
 import { KeymapPlugin } from "../../prosemirror/plugin/KeymapPlugin";
 import { MarkExtension } from "../Extension";
+import { EditorCommand } from "../../prosemirror/transform/chain";
 
 export class BoldExtension extends MarkExtension {
   name = MarkName.bold;

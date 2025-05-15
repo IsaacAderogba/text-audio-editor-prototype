@@ -4,38 +4,47 @@ import { findChangedBlockRanges, FindRangeOptions } from "./ranges";
 
 export interface ResolvedNode {
   node: Node;
-  parent: Node | null;
   pos: number;
+  parent: Node | null;
 }
 
-export interface FindNodeOptions extends FindRangeOptions {
+export interface FindNodeOptions {
   traverse: boolean;
   nodeFilter: (node: Node) => boolean;
 }
+
+const defaultFindNodeOptions: FindNodeOptions = {
+  traverse: true,
+  nodeFilter: () => true
+};
 
 export interface FindRelativeNodeOptions extends FindNodeOptions {
   // posOffset helps us compute the absolute position because relative methods like `node.descendants` only return relative positions
   posOffset: number;
 }
 
-const defaultNodeOptions: FindNodeOptions = {
-  stepFilter: () => true,
+const defaultFindRelativeNodeOptions: FindRelativeNodeOptions = {
   traverse: true,
+  posOffset: 0,
   nodeFilter: () => true
 };
 
-const defaultRelativeNodeOptions: FindRelativeNodeOptions = {
-  traverse: true,
-  posOffset: 0,
+export interface FindRangeNodeOptions extends FindRangeOptions {
+  traverse: boolean;
+  nodeFilter: (node: Node) => boolean;
+}
+
+const defaultFindRangeNodeOptions: FindRangeNodeOptions = {
   stepFilter: () => true,
+  traverse: true,
   nodeFilter: () => true
 };
 
 export const findChangedNodes = (
   tr: Transaction,
-  findOptions: Partial<FindNodeOptions> = {}
+  findOptions: Partial<FindRangeNodeOptions> = {}
 ): ResolvedNode[] => {
-  const options = { ...defaultNodeOptions, ...findOptions };
+  const options = { ...defaultFindRangeNodeOptions, ...findOptions };
 
   const nodeSet = new Set<Node>();
   const nodes: ResolvedNode[] = [];
@@ -58,9 +67,9 @@ export const findChangedNodes = (
 
 export const findNodeChildren = (
   node: Node,
-  findOptions: Partial<FindRelativeNodeOptions>
+  findOptions: Partial<FindRelativeNodeOptions> = {}
 ): ResolvedNode[] => {
-  const options = { ...defaultRelativeNodeOptions, ...findOptions };
+  const options = { ...defaultFindRelativeNodeOptions, ...findOptions };
   const children: ResolvedNode[] = [];
 
   node.descendants((node, relativePos, parent) => {
@@ -73,4 +82,22 @@ export const findNodeChildren = (
   });
 
   return children;
+};
+
+export const findNode = (
+  node: Node,
+  findOptions: Partial<FindRelativeNodeOptions> = {}
+): ResolvedNode | null => {
+  const options = { ...defaultFindNodeOptions, ...findOptions };
+  let resolvedNode: ResolvedNode | null = null;
+
+  node.descendants((node, pos, parent) => {
+    if (options.nodeFilter(node) && !resolvedNode) {
+      resolvedNode = { node, pos, parent };
+    }
+
+    return resolvedNode === null && options.traverse;
+  });
+
+  return resolvedNode;
 };

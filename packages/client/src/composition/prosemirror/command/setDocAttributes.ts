@@ -1,4 +1,4 @@
-import { EditorCommand } from "./EditorCommand";
+import { EditorCommand } from "../transform/chain";
 
 export type SetDocAttributes<T = EditorCommand> = (attrs: Record<string, unknown>) => T;
 export const setDocAttributes: SetDocAttributes = attrs => {

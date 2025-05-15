@@ -1,7 +1,7 @@
 import { Plugin } from "prosemirror-state";
 import type { DocumentEditor } from "../prosemirror/DocumentEditor";
-import { EditorCommand } from "../prosemirror/command/EditorCommand";
 import { CSS, Size } from "../../utilities/stitches";
+import { EditorCommand } from "../prosemirror/transform/chain";
 
 export abstract class Extension {
   abstract name: string;
