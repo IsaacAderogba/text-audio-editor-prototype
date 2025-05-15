@@ -26,7 +26,10 @@ export class DocumentEditor {
   public commands = {} as Commands;
   public context: DocumentContext;
 
-  constructor({ context, extensions, ...stateOptions }: EditorOptions) {
+  constructor(
+    public id: string,
+    { context, extensions, ...stateOptions }: EditorOptions
+  ) {
     this.context = context;
     for (const extension of extensions) {
       this.extensions.set(extension.name, extension.bind(this));

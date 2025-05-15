@@ -19,6 +19,7 @@
     "cors": "^2.8.5",
     "express": "^5.1.0",
     "lodash-es": "^4.17.21",
+    "prosemirror-transform": "^1.10.4",
     "socket.io": "^4.8.1",
     "uuid": "^11.1.0",
     "ws": "^8.18.2",

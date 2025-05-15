@@ -11,6 +11,7 @@ import { PageExtension } from "../extensions/nodes/PageExtension";
 import { ParagraphExtension } from "../extensions/nodes/ParagraphExtension";
 import { TextExtension } from "../extensions/nodes/TextExtension";
 import { VoiceExtension } from "../extensions/nodes/VoiceExtension";
+import { v4 } from "uuid";
 
 export class DocumentTrackObservable {
   composition: CompositionObservable;
@@ -22,7 +23,7 @@ export class DocumentTrackObservable {
     makeAutoObservable(this);
     this.composition = composition;
 
-    this.editor = new DocumentEditor({
+    this.editor = new DocumentEditor(v4(), {
       doc: pageSchema.nodeFromJSON(state),
       extensions: [
         new AttrsExtension(),

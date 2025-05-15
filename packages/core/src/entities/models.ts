@@ -13,7 +13,6 @@ export type EntityRecord = {
 export type EntityAPI<T extends Entity> = {
   read: (id: string) => Promise<T | null>;
   list: () => Promise<T[]>;
-  upsertMany: (record: T[]) => Promise<T[]>;
   create: (record: T) => Promise<T>;
   update: (id: string, record: DeepPartial<T>) => Promise<T>;
   delete: (id: string) => Promise<void>;

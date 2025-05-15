@@ -2,7 +2,6 @@ import { DocumentTrack, DocumentTrackChange, getAttrs } from "@taep/core";
 import { collab, getVersion, receiveTransaction, sendableSteps } from "prosemirror-collab";
 import { Plugin, TextSelection } from "prosemirror-state";
 import { Step } from "prosemirror-transform";
-import { v4 } from "uuid";
 import { HookExtension } from "../Extension";
 
 export interface CollabExtensionOptions {
@@ -20,10 +19,11 @@ export class CollabExtension extends HookExtension {
 
   initializePlugins = () => {
     const { pull, onSubscribe, onPublish } = this.options;
+
     return {
       collab: collab({
         version: getAttrs<DocumentTrack>(this.editor.state.doc).latestVersion,
-        clientID: v4()
+        clientID: this.editor.id
       }),
       collabDispatch: new Plugin({
         view: view => {
@@ -62,6 +62,7 @@ export class CollabExtension extends HookExtension {
               if (!message) return;
 
               onPublish({
+                acknowledged: true,
                 version: message.version,
                 clientIds: message.steps.map(() => message.clientID as string),
                 changes: message.steps.map(step => step.toJSON())
@@ -73,58 +74,3 @@ export class CollabExtension extends HookExtension {
     };
   };
 }
-
-// class Authority {
-//   constructor(doc) {
-//     this.doc = doc;
-//     this.steps = [];
-//     this.stepClientIDs = [];
-//     this.onNewSteps = [];
-//   }
-
-//   receiveSteps(version, steps, clientID) {
-//     if (version != this.steps.length) return;
-
-//     // Apply and accumulate new steps
-//     steps.forEach(step => {
-//       this.doc = step.apply(this.doc).doc;
-//       this.steps.push(step);
-//       this.stepClientIDs.push(clientID);
-//     });
-//     // Signal listeners
-//     this.onNewSteps.forEach(function (f) {
-//       f();
-//     });
-//   }
-
-//   stepsSince(version) {
-//     return {
-//       steps: this.steps.slice(version),
-//       clientIDs: this.stepClientIDs.slice(version)
-//     };
-//   }
-// }
-
-// const authority = new Authority();
-
-// function collabEditor(place) {
-//   const view = new EditorView(place, {
-//     state: EditorState.create({
-//       doc: authority.doc,
-//       plugins: [collab({ version: authority.steps.length })]
-//     }),
-//     dispatchTransaction(transaction) {
-//       const newState = view.state.apply(transaction);
-//       view.updateState(newState);
-//       const sendable = sendableSteps(newState);
-//       if (sendable) authority.receiveSteps(sendable.version, sendable.steps, sendable.clientID);
-//     }
-//   });
-
-//   authority.onNewSteps.push(function () {
-//     const newData = authority.stepsSince(getVersion(view.state));
-//     view.dispatch(receiveTransaction(view.state, newData.steps, newData.clientIDs));
-//   });
-
-//   return view;
-// }
