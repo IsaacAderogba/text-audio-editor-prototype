@@ -4,16 +4,14 @@ import { MediaTrack, MediaSegment } from "./MediaTrack";
 export type Track = DocumentTrack | MediaTrack;
 export type TrackChange = DocumentTrackChange | MediaTrackChange;
 export type DocumentTrackChange = {
-  acknowledged: boolean;
   version: number;
-  clientIds: string[];
+  clientId: string;
   changes: object[];
 };
 
 export type MediaTrackChange = {
-  acknowledged: boolean;
   version: number;
-  clientIds: string[];
+  clientId: string;
   changes: object[];
 };
 

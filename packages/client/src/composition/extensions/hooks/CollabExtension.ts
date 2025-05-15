@@ -5,9 +5,9 @@ import { Step } from "prosemirror-transform";
 import { HookExtension } from "../Extension";
 
 export interface CollabExtensionOptions {
-  onPublish: (input: DocumentTrackChange) => void;
-  onSubscribe: (dispatch: (output: DocumentTrackChange) => void) => void;
-  pull: (version: number) => Promise<DocumentTrackChange | DocumentTrack | null>;
+  onPublish: (message: DocumentTrackChange) => void;
+  onSubscribe: (dispatch: (message: DocumentTrackChange, forcePull?: boolean) => void) => void;
+  pull: (version: number) => Promise<DocumentTrackChange[] | DocumentTrack | null>;
 }
 
 export class CollabExtension extends HookExtension {
@@ -25,15 +25,24 @@ export class CollabExtension extends HookExtension {
         version: getAttrs<DocumentTrack>(this.editor.state.doc).latestVersion,
         clientID: this.editor.id
       }),
-      collabDispatch: new Plugin({
+      collabSync: new Plugin({
         view: view => {
-          onSubscribe(async message => {
+          onSubscribe(async (message, forcePull) => {
             const version = getVersion(view.state);
-            const data = message.version === version ? message : await pull(version);
+            const data = message.version !== version || forcePull ? await pull(version) : [message];
             if (!data) return;
 
             const state = this.editor.state;
-            if ("type" in data) {
+            if (Array.isArray(data)) {
+              const steps: Step[] = [];
+              const clientIds: string[] = [];
+              for (const { changes, clientId } of data) {
+                steps.push(...changes.map(step => Step.fromJSON(state.schema, step)));
+                clientIds.push(...changes.map(() => clientId));
+              }
+
+              view.dispatch(receiveTransaction(view.state, steps, clientIds));
+            } else {
               const doc = state.schema.nodeFromJSON(data);
               const tr = state.tr.replaceWith(0, state.doc.content.size, doc.content);
               tr.setMeta("collab", { version: data.attrs.latestVersion, unconfirmed: [] });
@@ -46,13 +55,6 @@ export class CollabExtension extends HookExtension {
               }
 
               view.dispatch(tr);
-            } else {
-              const tr = receiveTransaction(
-                view.state,
-                data.changes.map(step => Step.fromJSON(state.schema, step)),
-                data.clientIds
-              );
-              view.dispatch(tr);
             }
           });
 
@@ -62,9 +64,8 @@ export class CollabExtension extends HookExtension {
               if (!message) return;
 
               onPublish({
-                acknowledged: true,
+                clientId: message.clientID as string,
                 version: message.version,
-                clientIds: message.steps.map(() => message.clientID as string),
                 changes: message.steps.map(step => step.toJSON())
               });
             }

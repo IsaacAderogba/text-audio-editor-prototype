@@ -1,7 +1,7 @@
 import { EntityAPI, EntityRecord } from "@taep/core";
 import fsSync from "fs";
 import fs from "fs/promises";
-import { merge, omit } from "lodash-es";
+import { omit } from "lodash-es";
 import path from "path";
 
 async function readJSONFile<T>(pathname: string) {
@@ -57,8 +57,7 @@ export const createDatabaseAdapter = <T extends keyof EntityRecord>(
         throw new Error(`Failed to update '${type}' data.`);
       }
 
-      const entity = merge(previousEntity, omit(input, "id", "type"));
-
+      const entity = { ...previousEntity, ...omit(input, "id", "type") };
       await writeJSONFile(path.join(entityDir, `${entity.id}.json`), entity);
       return entity;
     },

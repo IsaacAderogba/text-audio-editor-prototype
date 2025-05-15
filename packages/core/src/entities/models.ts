@@ -1,5 +1,4 @@
 import { Composition } from "../composition";
-import { DeepPartial } from "../utilities/types";
 
 export type EntitiesAPI = {
   [K in keyof EntityRecord]: EntityAPI<EntityRecord[K]>;
@@ -14,7 +13,7 @@ export type EntityAPI<T extends Entity> = {
   read: (id: string) => Promise<T | null>;
   list: () => Promise<T[]>;
   create: (record: T) => Promise<T>;
-  update: (id: string, record: DeepPartial<T>) => Promise<T>;
+  update: (id: string, record: Partial<T>) => Promise<T>;
   delete: (id: string) => Promise<void>;
 };
 

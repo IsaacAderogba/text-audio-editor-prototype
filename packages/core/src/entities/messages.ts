@@ -3,26 +3,30 @@ import { Chapter, Project } from "./models";
 
 export type WebsocketMessage = ProjectMessage | ChapterMessage | ChapterTrackMessage;
 
-export type ProjectMessage = {
+export interface ProjectMessage extends Message {
   channel: "project";
-  project: Message<Project>;
-};
+  project: MessageData<Project>;
+}
 
-export type ChapterMessage = {
+export interface ChapterMessage extends Message {
   channel: "chapter";
-  chapter: Message<Chapter>;
-};
+  chapter: MessageData<Chapter>;
+}
 
-export type ChapterTrackMessage = {
+export interface ChapterTrackMessage extends Message {
   channel: "chapterTrack";
-  chapterTrack: Message<{
+  chapterTrack: MessageData<{
     chapterId: string;
     trackId: string;
     change: TrackChange;
   }>;
-};
+}
 
-type Message<T> = {
+interface Message {
+  acknowledged: boolean;
+}
+
+type MessageData<T> = {
   action: "created" | "updated" | "deleted";
   data: T;
 };

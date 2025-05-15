@@ -1,5 +1,10 @@
-import { Chapter, ChapterTrackMessage, pageSchema, WebsocketMessage } from "@taep/core";
-import { cloneDeep } from "lodash-es";
+import {
+  Chapter,
+  ChapterTrackMessage,
+  DocumentTrackChange,
+  pageSchema,
+  WebsocketMessage
+} from "@taep/core";
 import { Step } from "prosemirror-transform";
 import { WebSocket } from "ws";
 import { createDatabaseAdapter } from "../services/database.js";
@@ -75,9 +80,8 @@ export const chapterWSRouter = (socket: WebSocket, message: WebsocketMessage) =>
 const handleChapterTrackMessage = async (
   message: ChapterTrackMessage
 ): Promise<ChapterTrackMessage> => {
-  const { chapterId, trackId, change } = message.chapterTrack.data;
-  const unacknowledgedMessage = cloneDeep(message);
-  unacknowledgedMessage.chapterTrack.data.change.acknowledged = false;
+  const { chapterId, trackId, change: trackChange } = message.chapterTrack.data;
+  const unacknowledgedMessage: ChapterTrackMessage = { ...message, acknowledged: false };
 
   const chapter = await chaptersAPI.read(chapterId);
   if (!chapter) return unacknowledgedMessage;
@@ -89,26 +93,30 @@ const handleChapterTrackMessage = async (
   const changes: object[] = [];
   const clientIds: string[] = [];
 
-  for (let i = 0; i++; i < change.changes.length) {
-    const [stepJSON, clientId] = [change.changes[i], change.clientIds[i]];
+  for (const stepJSON of trackChange.changes) {
     const step = Step.fromJSON(pageSchema, stepJSON);
     const { doc: updatedDoc } = step.apply(doc);
     if (!updatedDoc) return unacknowledgedMessage;
 
     doc = updatedDoc;
-    changes.push(change);
-    clientIds.push(clientId);
+    changes.push(trackChange);
+    clientIds.push(trackChange.clientId);
   }
 
+  const documentTrackChange: DocumentTrackChange = {
+    clientId: trackChange.clientId,
+    version: trackChange.version,
+    changes
+  };
+
+  await chaptersAPI.update(chapterId, {});
+
   return {
+    acknowledged: true,
     channel: "chapterTrack",
     chapterTrack: {
       action: "updated",
-      data: {
-        chapterId,
-        trackId,
-        change: { acknowledged: true, changes, clientIds, version: change.version }
-      }
+      data: { chapterId, trackId, change: documentTrackChange }
     }
   };
 };
