@@ -6,7 +6,7 @@ const wsClient = createWSClient({
   connectionParams: async () => ({})
 });
 
-export const trpc = createTRPCClient<APIRouter>({
+export const client = createTRPCClient<APIRouter>({
   links: [
     httpBatchLink({
       url: `http://localhost:4000/api`,

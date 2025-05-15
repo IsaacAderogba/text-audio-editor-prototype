@@ -3,6 +3,7 @@ import { EventEmitter, on } from "events";
 import { Step } from "prosemirror-transform";
 import { createDatabaseAdapter } from "../services/database.js";
 import { procedure, router } from "../utilities/trpc.js";
+import { TRPCError } from "@trpc/server";
 
 const chaptersEmitter = new EventEmitter();
 export const chaptersAPI = createDatabaseAdapter("chapters");
@@ -61,10 +62,15 @@ const chapterRouter = router({
       const { chapterId, trackId, change: trackChange } = input.data;
 
       const chapter = await chaptersAPI.read(chapterId);
-      if (!chapter) return null;
+      if (!chapter) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Chapter not found" });
+      }
 
       const track = chapter.composition.content[trackId];
-      if (track.type !== "page") return track;
+      if (!track || track.type !== "page") {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Track not found" });
+      }
+
       if (track.attrs.latestVersion !== trackChange.version) return track;
 
       let doc = pageSchema.nodeFromJSON(track);
@@ -98,14 +104,21 @@ const chapterRouter = router({
       };
 
       chaptersEmitter.emit("trackChange", message);
-      return message;
+      return documentTrackChange;
     }),
 
-  onTrackChange: procedure.subscription(async function* (opts) {
-    for await (const [data] of on(chaptersEmitter, "trackChange", { signal: opts.signal })) {
-      yield data as ChapterTrackMessage;
-    }
-  })
+  onTrackChange: procedure
+    .input(input => {
+      return input as {
+        trackId: string;
+      };
+    })
+    .subscription(async function* ({ input, signal }) {
+      for await (const [data] of on(chaptersEmitter, "trackChange", { signal })) {
+        const message = data as ChapterTrackMessage;
+        if (message.data.trackId === input.trackId) yield message;
+      }
+    })
 });
 
 /**

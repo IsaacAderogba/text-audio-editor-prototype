@@ -12,6 +12,7 @@ import { ParagraphExtension } from "../extensions/nodes/ParagraphExtension";
 import { TextExtension } from "../extensions/nodes/TextExtension";
 import { VoiceExtension } from "../extensions/nodes/VoiceExtension";
 import { v4 } from "uuid";
+import { client } from "../../utilities/trpc";
 
 export class DocumentTrackObservable {
   composition: CompositionObservable;
@@ -28,8 +29,22 @@ export class DocumentTrackObservable {
       extensions: [
         new AttrsExtension(),
         new CollabExtension({
-          pull: async version => {
-            // todo
+          publish: async change => {
+            return await client.chapter.trackChange.mutate({
+              action: "updated",
+              data: { chapterId: composition.context.chapter.id, trackId: state.attrs.id, change }
+            });
+          },
+          onSubscribe: dispatch => {
+            const { unsubscribe } = client.chapter.onTrackChange.subscribe(
+              { trackId: state.attrs.id },
+              {
+                onData: message => dispatch(message.data.change),
+                onError: err => console.error("error", err)
+              }
+            );
+
+            return unsubscribe;
           }
         }),
         new CommandsExtension(),

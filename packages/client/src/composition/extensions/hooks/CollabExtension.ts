@@ -5,8 +5,8 @@ import { Step } from "prosemirror-transform";
 import { HookExtension } from "../Extension";
 
 export interface CollabExtensionOptions {
-  publish: (data: DocumentTrackChange) => Promise<DocumentTrackChange[] | DocumentTrack>;
-  onSubscribe: (dispatch: (data: DocumentTrackChange[]) => void) => void;
+  publish: (data: DocumentTrackChange) => Promise<DocumentTrackChange | DocumentTrack>;
+  onSubscribe: (dispatch: (data: DocumentTrackChange) => void) => () => void;
 }
 
 export class CollabExtension extends HookExtension {
@@ -27,7 +27,7 @@ export class CollabExtension extends HookExtension {
       collabSync: new Plugin({
         view: view => {
           const dispatch = async (data: DocumentTrackChange[]) => {
-            if (data[0].version !== getVersion(view.state)) return;
+            if (data[0]?.version !== getVersion(view.state)) return;
 
             const state = this.editor.state;
             const steps: Step[] = [];
@@ -40,8 +40,10 @@ export class CollabExtension extends HookExtension {
             view.dispatch(receiveTransaction(view.state, steps, clientIds));
           };
 
-          onSubscribe(dispatch);
+          const unsubscribe = onSubscribe(data => dispatch([data]));
+
           return {
+            destroy: unsubscribe,
             update: async () => {
               const message = sendableSteps(view.state);
               if (!message) return;
@@ -51,7 +53,8 @@ export class CollabExtension extends HookExtension {
                 version: message.version,
                 changes: message.steps.map(step => step.toJSON())
               });
-              if (Array.isArray(data)) return dispatch(data);
+
+              if ("version" in data) return dispatch([data]);
 
               const version = getVersion(view.state);
               const idx = data.attrs.changes.findIndex(change => change.version === version);
