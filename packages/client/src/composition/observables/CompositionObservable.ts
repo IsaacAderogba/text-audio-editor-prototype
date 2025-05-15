@@ -12,6 +12,7 @@ export interface CompositionContext {
 
 interface CompositionEvents {
   contextChange: (context: CompositionContext) => void;
+
   compositionChange: (composition: CompositionObservable) => void;
   trackChange: (track: TrackObservable) => void;
   segmentChange: (segment: SegmentObservable) => void;

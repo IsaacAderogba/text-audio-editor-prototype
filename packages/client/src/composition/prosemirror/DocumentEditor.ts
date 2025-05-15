@@ -5,7 +5,6 @@ import type { DocumentTrackObservable } from "../observables/DocumentTrackObserv
 import { CommandChainProps, createCommandChain } from "./transform/chain";
 
 interface EditorEvents {
-  change: (data: { state: EditorState; transaction: Transaction }) => void;
   mount: (data: { view: EditorView }) => void;
   unmount: (data: { view: EditorView }) => void;
 }
@@ -13,6 +12,7 @@ interface EditorEvents {
 interface EditorOptions extends Omit<EditorStateConfig, "plugins"> {
   extensions: Extension[];
   context: DocumentContext;
+  onStateTransaction: (tr: Transaction) => void;
 }
 
 interface DocumentContext {
@@ -22,13 +22,14 @@ interface DocumentContext {
 export class DocumentEditor {
   private listeners = new Map<string, Set<Function>>();
   private extensions = new Map<string, Extension>();
+  private onStateTransaction: (tr: Transaction) => void;
   public state: EditorState;
   public commands = {} as Commands;
   public context: DocumentContext;
 
   constructor(
     public id: string,
-    { context, extensions, ...stateOptions }: EditorOptions
+    { context, extensions, onStateTransaction, ...stateOptions }: EditorOptions
   ) {
     this.context = context;
     for (const extension of extensions) {
@@ -49,6 +50,7 @@ export class DocumentEditor {
     });
 
     this.state = EditorState.create({ ...stateOptions, plugins });
+    this.onStateTransaction = onStateTransaction;
   }
 
   private _view?: EditorView;
@@ -78,24 +80,13 @@ export class DocumentEditor {
     this.listeners.get(event)?.forEach(callback => callback(...args));
   };
 
-  public createView = (
+  public mount = (
     mount: HTMLElement,
-    options: {
-      state: Omit<EditorStateConfig, "plugins">;
-      view: Omit<DirectEditorProps, "state">;
-    }
+    options: Omit<DirectEditorProps, "state" | "dispatchTransaction"> = {}
   ) => {
     const view = new EditorView(
       { mount },
-      {
-        ...options.view,
-        state: this.state,
-        dispatchTransaction: transaction => {
-          this.state = this.state.apply(transaction);
-          view.updateState(this.state);
-          this.emit("change", { state: this.state, transaction });
-        }
-      }
+      { ...options, state: this.state, dispatchTransaction: this.onStateTransaction }
     );
 
     this._view = view;
@@ -103,7 +94,7 @@ export class DocumentEditor {
     return view;
   };
 
-  public destroy = () => {
+  public unmount = () => {
     if (this._view) {
       this._view.destroy();
       this.emit("unmount", { view: this._view });

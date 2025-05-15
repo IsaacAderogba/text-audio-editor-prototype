@@ -14,6 +14,7 @@ import { VoiceExtension } from "../extensions/nodes/VoiceExtension";
 import { v4 } from "uuid";
 import { client } from "../../utilities/trpc";
 import { DeepPartialBy } from "../../utilities/types";
+import { Transaction } from "prosemirror-state";
 
 export class DocumentTrackObservable {
   composition: CompositionObservable;
@@ -58,6 +59,7 @@ export class DocumentTrackObservable {
         new VoiceExtension(),
         new TextExtension()
       ],
+      onStateTransaction: this.onStateTransaction,
       context: { track: this }
     });
 
@@ -71,11 +73,19 @@ export class DocumentTrackObservable {
     });
   }
 
+  private onStateTransaction = (transaction: Transaction) => {
+    this.editor.state = this.editor.state.apply(transaction);
+    this.editor.view.updateState(this.editor.state);
+
+    // diff segments and update them reactively
+    // this should pick up on what changed, and emit an event...
+
+    this.composition.emit("trackChange", this);
+    this.composition.emit("compositionChange", this.composition);
+  };
+
   setState(state: DeepPartialBy<Partial<Omit<DocumentTrack, "type">>, "attrs">) {
-    if (this.editor.chain().updateTrack(state).run()) {
-      this.composition.emit("trackChange", this);
-      this.composition.emit("compositionChange", this.composition);
-    }
+    this.editor.chain().updateTrack(state).run();
   }
 
   toJSON(): DocumentTrack {
@@ -97,11 +107,7 @@ export class DocumentSegmentObservable<T extends DocumentSegment = DocumentSegme
   }
 
   setState(state: DeepPartialBy<Partial<Omit<DocumentSegment, "type">>, "attrs">) {
-    if (this.track.editor.chain().updateSegment(this.state.attrs.id, state).run()) {
-      this.composition.emit("segmentChange", this);
-      this.composition.emit("trackChange", this.track);
-      this.composition.emit("compositionChange", this.composition);
-    }
+    this.track.editor.chain().updateSegment(this.state.attrs.id, state).run();
   }
 
   toJSON(): T {
