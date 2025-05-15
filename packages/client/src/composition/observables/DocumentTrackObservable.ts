@@ -27,7 +27,11 @@ export class DocumentTrackObservable {
       doc: pageSchema.nodeFromJSON(state),
       extensions: [
         new AttrsExtension(),
-        new CollabExtension(),
+        new CollabExtension({
+          pull: async version => {
+            // todo
+          }
+        }),
         new CommandsExtension(),
         new HistoryExtension(),
 

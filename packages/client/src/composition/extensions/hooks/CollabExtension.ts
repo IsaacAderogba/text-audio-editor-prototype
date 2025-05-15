@@ -5,9 +5,8 @@ import { Step } from "prosemirror-transform";
 import { HookExtension } from "../Extension";
 
 export interface CollabExtensionOptions {
-  onPublish: (message: DocumentTrackChange) => void;
-  onSubscribe: (dispatch: (message: DocumentTrackChange, forcePull?: boolean) => void) => void;
-  pull: (version: number) => Promise<DocumentTrackChange[] | DocumentTrack | null>;
+  publish: (data: DocumentTrackChange) => Promise<DocumentTrackChange[] | DocumentTrack>;
+  onSubscribe: (dispatch: (data: DocumentTrackChange[]) => void) => void;
 }
 
 export class CollabExtension extends HookExtension {
@@ -18,7 +17,7 @@ export class CollabExtension extends HookExtension {
   }
 
   initializePlugins = () => {
-    const { pull, onSubscribe, onPublish } = this.options;
+    const { onSubscribe, publish } = this.options;
 
     return {
       collab: collab({
@@ -27,47 +26,52 @@ export class CollabExtension extends HookExtension {
       }),
       collabSync: new Plugin({
         view: view => {
-          onSubscribe(async (message, forcePull) => {
-            const version = getVersion(view.state);
-            const data = message.version !== version || forcePull ? await pull(version) : [message];
-            if (!data) return;
+          const dispatch = async (data: DocumentTrackChange[]) => {
+            if (data[0].version !== getVersion(view.state)) return;
 
             const state = this.editor.state;
-            if (Array.isArray(data)) {
-              const steps: Step[] = [];
-              const clientIds: string[] = [];
-              for (const { changes, clientId } of data) {
-                steps.push(...changes.map(step => Step.fromJSON(state.schema, step)));
-                clientIds.push(...changes.map(() => clientId));
-              }
-
-              view.dispatch(receiveTransaction(view.state, steps, clientIds));
-            } else {
-              const doc = state.schema.nodeFromJSON(data);
-              const tr = state.tr.replaceWith(0, state.doc.content.size, doc.content);
-              tr.setMeta("collab", { version: data.attrs.latestVersion, unconfirmed: [] });
-
-              try {
-                // try to preserve selection, even if we're forcefully updating the document
-                tr.setSelection(TextSelection.create(tr.doc, state.selection.anchor));
-              } catch {
-                // ignore error
-              }
-
-              view.dispatch(tr);
+            const steps: Step[] = [];
+            const clientIds: string[] = [];
+            for (const { changes, clientId } of data) {
+              steps.push(...changes.map(step => Step.fromJSON(state.schema, step)));
+              clientIds.push(...changes.map(() => clientId));
             }
-          });
 
+            view.dispatch(receiveTransaction(view.state, steps, clientIds));
+          };
+
+          onSubscribe(dispatch);
           return {
-            update: () => {
+            update: async () => {
               const message = sendableSteps(view.state);
               if (!message) return;
 
-              onPublish({
+              const data = await publish({
                 clientId: message.clientID as string,
                 version: message.version,
                 changes: message.steps.map(step => step.toJSON())
               });
+              if (Array.isArray(data)) return dispatch(data);
+
+              const version = getVersion(view.state);
+              const idx = data.attrs.changes.findIndex(change => change.version === version);
+              if (idx !== -1) {
+                dispatch(data.attrs.changes.slice(idx));
+              } else {
+                // replace document state to get it back in sync
+                const state = this.editor.state;
+                const doc = state.schema.nodeFromJSON(data);
+                const tr = state.tr.replaceWith(0, state.doc.content.size, doc.content);
+                tr.setMeta("collab", { version: data.attrs.latestVersion, unconfirmed: [] });
+
+                try {
+                  tr.setSelection(TextSelection.create(tr.doc, state.selection.anchor));
+                } catch {
+                  // ignore error
+                }
+
+                view.dispatch(tr);
+              }
             }
           };
         }

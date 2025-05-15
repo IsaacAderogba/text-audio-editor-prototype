@@ -1,15 +1,10 @@
-import {
-  Chapter,
-  ChapterTrackMessage,
-  DocumentTrackChange,
-  pageSchema,
-  WebsocketMessage
-} from "@taep/core";
+import { Chapter, ChapterTrackMessage, DocumentTrackChange, pageSchema } from "@taep/core";
+import { EventEmitter, on } from "events";
 import { Step } from "prosemirror-transform";
-import { WebSocket } from "ws";
 import { createDatabaseAdapter } from "../services/database.js";
 import { procedure, router } from "../utilities/trpc.js";
 
+const chaptersEmitter = new EventEmitter();
 export const chaptersAPI = createDatabaseAdapter("chapters");
 
 const chapterRouter = router({
@@ -56,70 +51,79 @@ const chapterRouter = router({
     })
     .mutation(({ input }) => {
       return chaptersAPI.delete(input.id);
+    }),
+
+  trackChange: procedure
+    .input(input => {
+      return input as ChapterTrackMessage;
     })
+    .mutation(async ({ input }) => {
+      const { chapterId, trackId, change: trackChange } = input.data;
+
+      const chapter = await chaptersAPI.read(chapterId);
+      if (!chapter) return null;
+
+      const track = chapter.composition.content[trackId];
+      if (track.type !== "page") return track;
+      if (track.attrs.latestVersion !== trackChange.version) return track;
+
+      let doc = pageSchema.nodeFromJSON(track);
+      const changes: object[] = [];
+      const clientIds: string[] = [];
+
+      for (const stepJSON of trackChange.changes) {
+        const step = Step.fromJSON(pageSchema, stepJSON);
+        const { doc: updatedDoc } = step.apply(doc);
+        if (!updatedDoc) return track;
+
+        doc = updatedDoc;
+        changes.push(trackChange);
+        clientIds.push(trackChange.clientId);
+      }
+
+      const documentTrackChange: DocumentTrackChange = {
+        clientId: trackChange.clientId,
+        version: trackChange.version,
+        changes
+      };
+
+      track.attrs.latestVersion = track.attrs.latestVersion + changes.length;
+      track.attrs.changes.push(documentTrackChange);
+      track.attrs.changes = track.attrs.changes.slice(-1000);
+      await chaptersAPI.update(chapterId, chapter);
+
+      const message: ChapterTrackMessage = {
+        action: "updated",
+        data: { chapterId, trackId, change: documentTrackChange }
+      };
+
+      chaptersEmitter.emit("trackChange", message);
+      return message;
+    }),
+
+  onTrackChange: procedure.subscription(async function* (opts) {
+    for await (const [data] of on(chaptersEmitter, "trackChange", { signal: opts.signal })) {
+      yield data as ChapterTrackMessage;
+    }
+  })
 });
 
-export const chapterWSRouter = (socket: WebSocket, message: WebsocketMessage) => {
-  switch (message.channel) {
-    case "chapterTrack":
-      return socket.emit(message.channel, handleChapterTrackMessage(message));
-  }
+/**
+ * so, if i try to make a change that doesn't work,
+ * should get the latest state and then use that...
+ * it would be nice if it could handle it itself internally...
+ */
 
-  // const authority = authorities.get(message.authorityId);
-  // if (!authority) return;
-  // try {
-  //   const version = authority.applyInput(message);
-  //   if (version !== undefined) {
-  //     socket.emit("message", authority.deriveOutput(version));
-  //   }
-  // } catch (err) {
-  //   console.error(err);
-  // }
-};
-
-const handleChapterTrackMessage = async (
-  message: ChapterTrackMessage
-): Promise<ChapterTrackMessage> => {
-  const { chapterId, trackId, change: trackChange } = message.chapterTrack.data;
-  const unacknowledgedMessage: ChapterTrackMessage = { ...message, acknowledged: false };
-
-  const chapter = await chaptersAPI.read(chapterId);
-  if (!chapter) return unacknowledgedMessage;
-
-  const track = chapter.composition.content[trackId];
-  if (track.type !== "page") return unacknowledgedMessage;
-
-  let doc = pageSchema.nodeFromJSON(track);
-  const changes: object[] = [];
-  const clientIds: string[] = [];
-
-  for (const stepJSON of trackChange.changes) {
-    const step = Step.fromJSON(pageSchema, stepJSON);
-    const { doc: updatedDoc } = step.apply(doc);
-    if (!updatedDoc) return unacknowledgedMessage;
-
-    doc = updatedDoc;
-    changes.push(trackChange);
-    clientIds.push(trackChange.clientId);
-  }
-
-  const documentTrackChange: DocumentTrackChange = {
-    clientId: trackChange.clientId,
-    version: trackChange.version,
-    changes
-  };
-
-  await chaptersAPI.update(chapterId, {});
-
-  return {
-    acknowledged: true,
-    channel: "chapterTrack",
-    chapterTrack: {
-      action: "updated",
-      data: { chapterId, trackId, change: documentTrackChange }
-    }
-  };
-};
+// const authority = authorities.get(message.authorityId);
+// if (!authority) return;
+// try {
+//   const version = authority.applyInput(message);
+//   if (version !== undefined) {
+//     socket.emit("message", authority.deriveOutput(version));
+//   }
+// } catch (err) {
+//   console.error(err);
+// }
 
 // class Authority {
 //   constructor(doc) {

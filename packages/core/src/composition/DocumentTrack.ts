@@ -8,16 +8,23 @@ export type DocumentTrack = PageTrack;
 
 export type PageTrack = {
   type: "page";
-  attrs: PageDocumentAttrs;
+  attrs: DocumentTrackAttrs;
   content: Block[];
 };
 
-export interface PageDocumentAttrs {
+export interface DocumentTrackAttrs {
   id: string;
   latestVersion: number;
+  changes: DocumentTrackChange[];
   createdAt: string;
   updatedAt: string;
 }
+
+export type DocumentTrackChange = {
+  version: number;
+  clientId: string;
+  changes: object[];
+};
 
 /**
  * Blocks

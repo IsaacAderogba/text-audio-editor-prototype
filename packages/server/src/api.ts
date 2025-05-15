@@ -1,14 +1,13 @@
 import * as trpcExpress from "@trpc/server/adapters/express";
+import { applyWSSHandler } from "@trpc/server/dist/adapters/ws.js";
 import cookieParser from "cookie-parser";
 import express, { json } from "express";
 import http from "http";
-import { chapterRouter, chapterWSRouter } from "./routes/chapters.js";
-import { projectRouter, projectWSRouter } from "./routes/projects.js";
-import { createHTTPContext, createWSContext, router } from "./utilities/trpc";
-import { cors, credentials } from "./utilities/cors.js";
 import ws from "ws";
-import { applyWSSHandler } from "@trpc/server/dist/adapters/ws.js";
-import { WebsocketMessage } from "@taep/core";
+import { chapterRouter } from "./routes/chapters.js";
+import { projectRouter } from "./routes/projects.js";
+import { cors, credentials } from "./utilities/cors.js";
+import { createHTTPContext, createWSContext, router } from "./utilities/trpc";
 
 const apiRouter = router({
   project: projectRouter,
@@ -28,12 +27,12 @@ const startApi = async (port: number) => {
     trpcExpress.createExpressMiddleware({ router: apiRouter, createContext: createHTTPContext })
   );
 
-  const httpServer = http.createServer(app);
-  httpServer.listen(port, () => {
+  const server = http.createServer(app);
+  server.listen(port, () => {
     console.log(`✅ HTTP server listening on port ${port}\n`);
   });
 
-  const wsServer = new ws.Server({ port });
+  const wsServer = new ws.Server({ server });
   const handler = applyWSSHandler({
     wss: wsServer,
     router: apiRouter,
@@ -48,13 +47,6 @@ const startApi = async (port: number) => {
     socket.once("close", () => {
       console.log(`🔗 disconnected (${wsServer.clients.size})`);
     });
-
-    socket.on("message", (message: WebsocketMessage) => {
-      console.log(`[message]:`, message);
-
-      projectWSRouter(socket, message);
-      chapterWSRouter(socket, message);
-    });
   });
 
   console.log(`✅ WebSocket server listening on ${port}`);
@@ -64,7 +56,7 @@ const startApi = async (port: number) => {
     wsServer.close();
   });
 
-  return httpServer;
+  return server;
 };
 
 type APIRouter = typeof apiRouter;

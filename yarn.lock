@@ -1497,6 +1497,11 @@
   resolved "https://registry.yarnpkg.com/@tanstack/virtual-core/-/virtual-core-3.13.6.tgz#329f962f1596b3280736c266a982897ed2112157"
   integrity sha512-cnQUeWnhNP8tJ4WsGcYiX24Gjkc9ALstLbHcBj1t3E7EimN6n6kHH+DPV4PpDnuw00NApQp+ViojMj1GRdwYQg==
 
+"@trpc/client@^11.1.2":
+  version "11.1.2"
+  resolved "https://registry.yarnpkg.com/@trpc/client/-/client-11.1.2.tgz#4119238d569281692e7aea843fdad128e0fe3cec"
+  integrity sha512-RpifJOAv+ql9gF3oafa3dLCF01AzWu2DzejvehAPG2IlwHxopKoYXaImJ8zPwRkZokuWiKz5v65HjElmi8TlrQ==
+
 "@trpc/server@^11.1.0":
   version "11.1.0"
   resolved "https://registry.yarnpkg.com/@trpc/server/-/server-11.1.0.tgz#8169fa8b944beddf65a95f376d4afea5732be254"

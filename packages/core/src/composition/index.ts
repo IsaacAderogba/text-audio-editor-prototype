@@ -1,19 +1,8 @@
-import { DocumentSegment, DocumentTrack } from "./DocumentTrack";
-import { MediaTrack, MediaSegment } from "./MediaTrack";
+import { DocumentSegment, DocumentTrack, DocumentTrackChange } from "./DocumentTrack";
+import { MediaTrack, MediaSegment, MediaTrackChange } from "./MediaTrack";
 
 export type Track = DocumentTrack | MediaTrack;
 export type TrackChange = DocumentTrackChange | MediaTrackChange;
-export type DocumentTrackChange = {
-  version: number;
-  clientId: string;
-  changes: object[];
-};
-
-export type MediaTrackChange = {
-  version: number;
-  clientId: string;
-  changes: object[];
-};
 
 export type Segment = MediaSegment | DocumentSegment;
 export interface Composition {
@@ -26,8 +15,6 @@ export interface CompositionAttrs {
   fps: number;
   width: number;
   height: number;
-
-  changes: Record<string, TrackChange[]>;
 }
 
 export * from "./DocumentTrack";
