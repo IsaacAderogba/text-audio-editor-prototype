@@ -1,4 +1,4 @@
-import type { SegmentAttrs } from "./MediaTrack";
+import { CompositionDelta, SegmentAttrs, TrackAttrs } from "./Shared";
 
 /**
  * Documents
@@ -8,24 +8,13 @@ export type DocumentTrack = PageTrack;
 
 export type PageTrack = {
   type: "page";
-  attrs: DocumentTrackAttrs;
+  attrs: PageTrackAttrs;
   content: Block[];
 };
 
-export interface DocumentTrackAttrs {
-  id: string;
-  latestVersion: number;
-  deltas: DocumentTrackDelta[];
-  createdAt: string;
-  updatedAt: string;
-}
+export interface PageTrackAttrs extends TrackAttrs<DocumentTrackDelta> {}
 
-export type DocumentTrackDelta = {
-  type: "delta";
-  version: number;
-  clientId: string;
-  steps: object[];
-};
+export type DocumentTrackDelta = CompositionDelta<object>;
 
 /**
  * Blocks

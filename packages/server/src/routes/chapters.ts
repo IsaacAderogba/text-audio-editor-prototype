@@ -3,6 +3,8 @@ import {
   DocumentTrackDelta,
   DocumentTrackMessage,
   DocumentTrackMessageWhere,
+  MediaTrackMessage,
+  MediaTrackMessageWhere,
   pageSchema
 } from "@taep/core";
 import { EventEmitter, on } from "events";
@@ -58,6 +60,29 @@ const chapterRouter = router({
     })
     .mutation(({ input }) => {
       return chaptersAPI.delete(input.id);
+    }),
+
+  mediaTrackChange: procedure
+    .input(input => input as MediaTrackMessage)
+    .mutation(async ({ input }) => {
+      const chapter = await chaptersAPI.read(input.where.chapterId);
+      if (!chapter) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Chapter not found" });
+      }
+
+      const track = chapter.composition.content[input.where.trackId];
+      if (!track || track.type === "page") {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Track not found" });
+      }
+    }),
+
+  onMediaTrackChange: procedure
+    .input(input => input as MediaTrackMessageWhere)
+    .subscription(async function* ({ input, signal }) {
+      for await (const [data] of on(chaptersEmitter, "mediaTrack", { signal })) {
+        const message = data as MediaTrackMessageWhere;
+        if (message.where.trackId === input.where.trackId) yield message;
+      }
     }),
 
   documentTrackChange: procedure

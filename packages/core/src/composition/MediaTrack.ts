@@ -1,4 +1,7 @@
+import { CompositionDelta, SegmentAttrs, TrackAttrs } from "./Shared";
+
 export type MediaTrack = VideoTrack | AudioTrack;
+export type MediaTrackDelta = VideoTrackDelta | AudioTrackDelta;
 
 export interface VideoTrack {
   type: "video";
@@ -6,7 +9,13 @@ export interface VideoTrack {
   content: Record<string, FrameSegment>;
 }
 
-export interface VideoTrackAttrs extends MediaTrackAttrs {}
+export interface VideoTrackAttrs extends TrackAttrs<VideoTrackDelta> {}
+
+export type VideoTrackDelta = CompositionDelta<{
+  type: "video";
+  action: "created" | "updated" | "deleted";
+  data: FrameSegment | Omit<VideoTrack, "content">;
+}>;
 
 export interface AudioTrack {
   type: "audio";
@@ -14,22 +23,13 @@ export interface AudioTrack {
   content: Record<string, SampleSegment>;
 }
 
-export interface AudioTrackAttrs extends MediaTrackAttrs {}
+export interface AudioTrackAttrs extends TrackAttrs<AudioTrackDelta> {}
 
-interface MediaTrackAttrs {
-  id: string;
-  latestVersion: number;
-  deltas: MediaTrackDelta[];
-  createdAt: string;
-  updatedAt: string;
-}
-
-export type MediaTrackDelta = {
-  type: "delta";
-  version: number;
-  clientId: string;
-  deltas: object[];
-};
+export type AudioTrackDelta = CompositionDelta<{
+  type: "audio";
+  action: "created" | "updated" | "deleted";
+  data: SampleSegment | Omit<AudioTrack, "content">;
+}>;
 
 export type MediaSegment = FrameSegment | SampleSegment;
 
@@ -49,14 +49,4 @@ export interface SampleSegment {
 
 export interface SampleSegmentAttrs extends SegmentAttrs {
   src: string;
-}
-
-export interface SegmentAttrs {
-  id: string;
-  trackId: string;
-  from: number;
-  duration: number;
-  playbackRate: number;
-  createdAt: string;
-  updatedAt: string;
 }
