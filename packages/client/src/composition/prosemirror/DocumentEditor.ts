@@ -3,11 +3,12 @@ import { DirectEditorProps, EditorView } from "prosemirror-view";
 import { Extension } from "../extensions/Extension";
 import type { DocumentTrackObservable } from "../observables/DocumentTrackObservable";
 import { CommandChainProps, createCommandChain } from "./transform/chain";
+import { EventEmitter } from "../../utilities/EventEmitter";
 
-interface EditorEvents {
+type EditorEvents = {
   mount: (data: { view: EditorView }) => void;
   unmount: (data: { view: EditorView }) => void;
-}
+};
 
 interface EditorOptions extends Omit<EditorStateConfig, "plugins"> {
   extensions: Extension[];
@@ -19,8 +20,7 @@ interface DocumentContext {
   track: DocumentTrackObservable;
 }
 
-export class DocumentEditor {
-  private listeners = new Map<string, Set<Function>>();
+export class DocumentEditor extends EventEmitter<EditorEvents> {
   private extensions = new Map<string, Extension>();
   private onStateTransaction: (tr: Transaction) => void;
   public state: EditorState;
@@ -31,6 +31,7 @@ export class DocumentEditor {
     public id: string,
     { context, extensions, onStateTransaction, ...stateOptions }: EditorOptions
   ) {
+    super();
     this.context = context;
     for (const extension of extensions) {
       this.extensions.set(extension.name, extension.bind(this));
@@ -64,21 +65,6 @@ export class DocumentEditor {
 
   public chain = (props: Pick<CommandChainProps, "dispatchMode" | "tr"> = {}) =>
     createCommandChain({ ...props, editor: this });
-
-  public on = <E extends keyof EditorEvents>(event: E, cb: EditorEvents[E]) => {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set());
-    }
-
-    this.listeners.get(event)?.add(cb);
-    return () => {
-      this.listeners.get(event)?.delete(cb);
-    };
-  };
-
-  public emit = <E extends keyof EditorEvents>(event: E, ...args: Parameters<EditorEvents[E]>) => {
-    this.listeners.get(event)?.forEach(callback => callback(...args));
-  };
 
   public mount = (
     mount: HTMLElement,

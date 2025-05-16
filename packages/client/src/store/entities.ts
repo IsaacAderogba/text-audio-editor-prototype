@@ -1,20 +1,28 @@
 import { makeAutoObservable } from "mobx";
 
-import type { StoreObservable } from "./store";
-import { ChapterEntity, ProjectEntity } from "@taep/core";
-import { DeepPartial } from "../utilities/types";
+import { Chapter, Project } from "@taep/core";
 import { merge } from "lodash-es";
+import { EventEmitter } from "../utilities/EventEmitter";
+import { DeepPartial } from "../utilities/types";
+import type { StoreObservable } from "./store";
 
-class EntityObservable<T> {
+type EntityEvents<T> = {
+  update: (data: EntityObservable<T>) => void;
+};
+class EntityObservable<T> extends EventEmitter<EntityEvents<T>> {
   state: T;
 
   constructor(state: T) {
+    super();
+
     makeAutoObservable(this);
     this.state = state;
   }
 
-  setState(state: DeepPartial<T>) {
+  update(state: DeepPartial<T>) {
     merge(this.state, state);
+
+    this.emit("update", this);
   }
 }
 
@@ -27,18 +35,25 @@ class EntityStoreObservable<T> {
     this.store = store;
   }
 
-  remove(id: string) {
-    delete this.state[id];
+  delete(id: string) {
+    const entity = this.state[id];
+    if (entity) {
+      delete this.state[id];
+      entity.listeners.clear();
+    }
   }
 
-  set(id: string, Entity: T) {
+  upsert(id: string, Entity: T) {
     this.state[id] = new EntityObservable(Entity);
   }
 }
 
+export type ProjectObservable = EntityObservable<Project>;
+export type ChapterObservable = EntityObservable<Chapter>;
+
 export class EntitiesStoreObservable {
-  projects: EntityStoreObservable<ProjectEntity>;
-  chapters: EntityStoreObservable<ChapterEntity>;
+  projects: EntityStoreObservable<Project>;
+  chapters: EntityStoreObservable<Chapter>;
 
   constructor(store: StoreObservable) {
     makeAutoObservable(this);

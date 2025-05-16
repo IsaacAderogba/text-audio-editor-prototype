@@ -1,7 +1,12 @@
 import { DocumentSegment, DocumentTrack, NodeGroup, pageSchema } from "@taep/core";
+import { isArray, mergeWith } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
-import { DocumentEditor } from "../prosemirror/DocumentEditor";
-import type { CompositionObservable } from "./CompositionObservable";
+import { Node } from "prosemirror-model";
+import { Transaction } from "prosemirror-state";
+import { v4 } from "uuid";
+import { EventEmitter } from "../../utilities/EventEmitter";
+import { client } from "../../utilities/trpc";
+import { DeepPartialBy } from "../../utilities/types";
 import { AttrsExtension } from "../extensions/hooks/AttrsExtension";
 import { CollabExtension } from "../extensions/hooks/CollabExtension";
 import { CommandsExtension } from "../extensions/hooks/CommandsExtension";
@@ -11,23 +16,24 @@ import { PageExtension } from "../extensions/nodes/PageExtension";
 import { ParagraphExtension } from "../extensions/nodes/ParagraphExtension";
 import { TextExtension } from "../extensions/nodes/TextExtension";
 import { VoiceExtension } from "../extensions/nodes/VoiceExtension";
-import { v4 } from "uuid";
-import { client } from "../../utilities/trpc";
-import { DeepPartialBy } from "../../utilities/types";
-import { Transaction } from "prosemirror-state";
-import { isArray, mergeWith } from "lodash-es";
-import { Node } from "prosemirror-model";
+import { DocumentEditor } from "../prosemirror/DocumentEditor";
+import type { CompositionObservable } from "./CompositionObservable";
 
-export class DocumentTrackObservable {
+export type DocumentTrackEvents = {
+  update: (data: DocumentTrackObservable) => void;
+  segmentUpdate: (data: DocumentSegmentObservable) => void;
+};
+export class DocumentTrackObservable extends EventEmitter<DocumentTrackEvents> {
   composition: CompositionObservable;
 
   editor: DocumentEditor;
-  segments: Record<string, DocumentSegmentObservable> = {};
+  segments: Record<string, DocumentSegmentObservable<DocumentSegment>> = {};
 
   constructor(composition: CompositionObservable, state: DocumentTrack) {
+    super();
+
     makeAutoObservable(this, { editor: false });
     this.composition = composition;
-
     this.editor = new DocumentEditor(v4(), {
       doc: pageSchema.nodeFromJSON(state),
       extensions: [
@@ -36,7 +42,7 @@ export class DocumentTrackObservable {
           publish: async change => {
             return await client.chapter.trackChange.mutate({
               action: "updated",
-              data: { chapterId: composition.context.chapter.id, trackId: state.attrs.id, change }
+              data: { chapterId: composition.chapter.state.id, trackId: state.attrs.id, change }
             });
           },
           onSubscribe: dispatch => {
@@ -61,7 +67,7 @@ export class DocumentTrackObservable {
         new VoiceExtension(),
         new TextExtension()
       ],
-      onStateTransaction: this.handleStateChange,
+      onStateTransaction: this.handleUpdate,
       context: { track: this }
     });
 
@@ -71,7 +77,7 @@ export class DocumentTrackObservable {
     });
   }
 
-  handleStateChange = (transaction: Transaction) => {
+  handleUpdate = (transaction: Transaction) => {
     const prevState = this.editor.state;
     const nextState = this.editor.state.apply(transaction);
 
@@ -116,15 +122,14 @@ export class DocumentTrackObservable {
       const segment = this.segments[id];
       if (segment) {
         delete this.segments[id];
-        this.composition.emit("segmentChange", segment, { action: "deleted" });
+        segment.listeners.clear();
       }
     }
 
     for (const [id, node] of Object.entries(changedSegments)) {
       const segment = this.segments[id];
       if (segment) {
-        segment.handleStateChange(node.toJSON());
-        this.composition.emit("segmentChange", segment, { action: "updated" });
+        segment.handleUpdate(node.toJSON());
       } else {
         addedSegments[id] = node;
       }
@@ -133,11 +138,10 @@ export class DocumentTrackObservable {
     for (const [id, node] of Object.entries(addedSegments)) {
       const segment = new DocumentSegmentObservable(this, node.toJSON());
       this.segments[id] = segment;
-      this.composition.emit("segmentChange", segment, { action: "created" });
     }
 
-    this.composition.emit("trackChange", this, { action: "updated" });
-    this.composition.emit("compositionChange", this.composition, { action: "updated" });
+    this.emit("update", this);
+    this.composition.emit("trackUpdate", this);
   };
 
   update(state: DeepPartialBy<Partial<Omit<DocumentTrack, "type">>, "attrs">) {
@@ -149,21 +153,33 @@ export class DocumentTrackObservable {
   }
 }
 
-export class DocumentSegmentObservable<T extends DocumentSegment = DocumentSegment> {
+export type DocumentSegmentEvents<T extends DocumentSegment> = {
+  update: (data: DocumentSegmentObservable<T>) => void;
+};
+export class DocumentSegmentObservable<
+  T extends DocumentSegment = DocumentSegment
+> extends EventEmitter<DocumentSegmentEvents<T>> {
   track: DocumentTrackObservable;
   state: T;
 
   constructor(track: DocumentTrackObservable, state: T) {
-    makeAutoObservable(this);
+    super();
 
+    makeAutoObservable(this);
     this.track = track;
     this.state = state;
   }
 
-  handleStateChange = (state: T) => {
+  handleUpdate = (state: T) => {
     mergeWith(this.state, state, (source, target) => {
       if (isArray(source)) return target || source;
     });
+
+    this.emit("update", this);
+    // @ts-expect-error - todo
+    this.track.emit("segmentUpdate", this);
+    // @ts-expect-error - todo
+    this.track.composition.emit("segmentUpdate", this);
   };
 
   update(state: DeepPartialBy<Partial<Omit<DocumentSegment, "type">>, "attrs">) {

@@ -1,40 +1,32 @@
-import { Chapter, Composition } from "@taep/core";
+import { Composition } from "@taep/core";
 import { makeAutoObservable, toJS } from "mobx";
-import { omit } from "lodash-es";
+import { merge, omit } from "lodash-es";
 import { DocumentSegmentObservable, DocumentTrackObservable } from "./DocumentTrackObservable";
 import { MediaSegmentObservable, MediaTrackObservable } from "./MediaTrackObservable";
+import { ChapterObservable } from "../../store/entities";
+import { EventEmitter } from "../../utilities/EventEmitter";
+import { DeepPartial } from "../../utilities/types";
 
 export type TrackObservable = DocumentTrackObservable | MediaTrackObservable;
 export type SegmentObservable = DocumentSegmentObservable | MediaSegmentObservable;
-interface CompositionContext {
-  chapter: Chapter;
-}
 
-interface ChangeMetadata {
-  action: "created" | "updated" | "deleted";
-}
-
-interface CompositionEvents {
-  contextChange: (context: CompositionContext) => void;
-
-  compositionChange: (composition: CompositionObservable, metadata: ChangeMetadata) => void;
-  trackChange: (track: TrackObservable, metadata: ChangeMetadata) => void;
-  segmentChange: (segment: SegmentObservable, metadata: ChangeMetadata) => void;
-}
-
-export class CompositionObservable {
-  context: CompositionContext;
+export type CompositionEvents = {
+  update: (data: CompositionObservable) => void;
+  trackUpdate: (data: TrackObservable) => void;
+  segmentUpdate: (data: SegmentObservable) => void;
+};
+export class CompositionObservable extends EventEmitter<CompositionEvents> {
+  chapter: ChapterObservable;
   state: Omit<Composition, "content">;
   tracks: Record<string, TrackObservable> = {};
 
-  private listeners = new Map<string, Set<Function>>();
+  constructor(chapter: ChapterObservable) {
+    super();
 
-  constructor(state: Composition, context: CompositionContext) {
     makeAutoObservable(this);
-
-    this.state = omit(state, "content");
-    this.context = context;
-    Object.values(state.content).forEach(track => {
+    this.chapter = chapter;
+    this.state = omit(this.chapter.state.composition, "content");
+    Object.values(this.chapter.state.composition.content).forEach(track => {
       if (track.type === "page") {
         this.tracks[track.attrs.id] = new DocumentTrackObservable(this, track);
       } else {
@@ -43,27 +35,10 @@ export class CompositionObservable {
     });
   }
 
-  public on = <E extends keyof CompositionEvents>(event: E, cb: CompositionEvents[E]) => {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set());
-    }
+  update(state: DeepPartial<Pick<Composition, "attrs">>) {
+    merge(this.state.attrs, state.attrs);
 
-    this.listeners.get(event)?.add(cb);
-    return () => {
-      this.listeners.get(event)?.delete(cb);
-    };
-  };
-
-  public emit = <E extends keyof CompositionEvents>(
-    event: E,
-    ...args: Parameters<CompositionEvents[E]>
-  ) => {
-    this.listeners.get(event)?.forEach(callback => callback(...args));
-  };
-
-  setContext(partialContext: Partial<CompositionContext>) {
-    Object.assign(this.context, partialContext);
-    this.emit("contextChange", this.context);
+    this.emit("update", this);
   }
 
   toJSON(): Composition {
