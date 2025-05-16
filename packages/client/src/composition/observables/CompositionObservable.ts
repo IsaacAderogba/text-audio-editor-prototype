@@ -6,16 +6,20 @@ import { MediaSegmentObservable, MediaTrackObservable } from "./MediaTrackObserv
 
 export type TrackObservable = DocumentTrackObservable | MediaTrackObservable;
 export type SegmentObservable = DocumentSegmentObservable | MediaSegmentObservable;
-export interface CompositionContext {
+interface CompositionContext {
   chapter: Chapter;
+}
+
+interface ChangeMetadata {
+  action: "created" | "updated" | "deleted";
 }
 
 interface CompositionEvents {
   contextChange: (context: CompositionContext) => void;
 
-  compositionChange: (composition: CompositionObservable) => void;
-  trackChange: (track: TrackObservable) => void;
-  segmentChange: (segment: SegmentObservable) => void;
+  compositionChange: (composition: CompositionObservable, metadata: ChangeMetadata) => void;
+  trackChange: (track: TrackObservable, metadata: ChangeMetadata) => void;
+  segmentChange: (segment: SegmentObservable, metadata: ChangeMetadata) => void;
 }
 
 export class CompositionObservable {
