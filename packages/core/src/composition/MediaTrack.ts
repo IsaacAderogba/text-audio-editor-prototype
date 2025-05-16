@@ -11,11 +11,12 @@ export interface VideoTrack {
 
 export interface VideoTrackAttrs extends TrackAttrs<VideoTrackDelta> {}
 
-export type VideoTrackDelta = CompositionDelta<{
+export type VideoTrackDelta = CompositionDelta<VideoTrackDeltaStep>;
+export type VideoTrackDeltaStep = {
   type: "video";
   action: "created" | "updated" | "deleted";
   data: FrameSegment | Omit<VideoTrack, "content">;
-}>;
+};
 
 export interface AudioTrack {
   type: "audio";
@@ -25,11 +26,12 @@ export interface AudioTrack {
 
 export interface AudioTrackAttrs extends TrackAttrs<AudioTrackDelta> {}
 
-export type AudioTrackDelta = CompositionDelta<{
+export type AudioTrackDelta = CompositionDelta<AudioTrackDeltaStep>;
+export type AudioTrackDeltaStep = {
   type: "audio";
   action: "created" | "updated" | "deleted";
   data: SampleSegment | Omit<AudioTrack, "content">;
-}>;
+};
 
 export type MediaSegment = FrameSegment | SampleSegment;
 

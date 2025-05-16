@@ -1,17 +1,18 @@
 import {
   Chapter,
-  DocumentTrackDelta,
   DocumentTrackMessage,
   DocumentTrackMessageWhere,
+  MediaTrack,
+  MediaTrackDelta,
   MediaTrackMessage,
   MediaTrackMessageWhere,
   pageSchema
 } from "@taep/core";
+import { TRPCError } from "@trpc/server";
 import { EventEmitter, on } from "events";
 import { Step } from "prosemirror-transform";
 import { createDatabaseAdapter } from "../services/database.js";
 import { procedure, router } from "../utilities/trpc.js";
-import { TRPCError } from "@trpc/server";
 
 const chaptersEmitter = new EventEmitter();
 export const chaptersAPI = createDatabaseAdapter("chapters");
@@ -74,6 +75,57 @@ const chapterRouter = router({
       if (!track || track.type === "page") {
         throw new TRPCError({ code: "NOT_FOUND", message: "Track not found" });
       }
+
+      if (input.action === "updated") {
+        const latestVersion = track.attrs.latestVersion;
+        if (latestVersion !== input.data.version) return track;
+
+        const deltaRecord: Record<MediaTrack["type"], MediaTrackDelta> = {
+          video: { ...input.data, steps: input.data.steps.filter(step => step.type === "video") },
+          audio: { ...input.data, steps: input.data.steps.filter(step => step.type === "audio") }
+        };
+
+        for (const step of deltaRecord[track.type].steps) {
+          switch (step.data.type) {
+            case "video":
+            case "audio":
+              Object.assign(track, step.data);
+              break;
+            case "frame":
+            case "sample":
+              if (step.action === "deleted") {
+                delete track.content[step.data.attrs.id];
+              } else {
+                track.content[step.data.attrs.id] = step.data;
+              }
+              break;
+          }
+        }
+
+        const message: MediaTrackMessage = {
+          action: "updated",
+          where: input.where,
+          data: deltaRecord[track.type]
+        };
+
+        track.attrs.latestVersion = latestVersion + message.data.steps.length;
+        track.attrs.deltas.push(message.data as any);
+        track.attrs.deltas = track.attrs.deltas.slice(-1000);
+
+        chapter.composition.content[input.where.trackId] = track;
+        await chaptersAPI.update(input.where.chapterId, chapter);
+        chaptersEmitter.emit("mediaTrack", message);
+
+        return message.data;
+      } else if (input.action === "created") {
+        chapter.composition.content[input.data.attrs.id] = input.data;
+        await chaptersAPI.update(input.where.chapterId, chapter);
+        return input.data;
+      } else {
+        delete chapter.composition.content[input.data.attrs.id];
+        await chaptersAPI.update(input.where.chapterId, chapter);
+        return input.data;
+      }
     }),
 
   onMediaTrackChange: procedure
@@ -98,12 +150,12 @@ const chapterRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Track not found" });
       }
 
-      if (input.data.type === "delta") {
-        if (track.attrs.latestVersion !== input.data.version) return track;
+      if (input.action === "updated") {
+        const latestVersion = track.attrs.latestVersion;
+        if (latestVersion !== input.data.version) return track;
 
         let doc = pageSchema.nodeFromJSON(track);
         const steps: object[] = [];
-        const clientIds: string[] = [];
 
         for (const stepJSON of input.data.steps) {
           const step = Step.fromJSON(pageSchema, stepJSON);
@@ -112,26 +164,30 @@ const chapterRouter = router({
 
           doc = updatedDoc;
           steps.push(input.data);
-          clientIds.push(input.data.clientId);
         }
-
-        const documentTrackDelta: DocumentTrackDelta = { ...input.data, steps };
-
-        track.attrs.latestVersion = track.attrs.latestVersion + steps.length;
-        track.attrs.deltas.push(documentTrackDelta);
-        track.attrs.deltas = track.attrs.deltas.slice(-1000);
-        await chaptersAPI.update(input.where.chapterId, chapter);
 
         const message: DocumentTrackMessage = {
           action: "updated",
           where: input.where,
-          data: documentTrackDelta
+          data: { ...input.data, steps }
         };
 
+        Object.assign(track, doc.toJSON());
+        track.attrs.latestVersion = latestVersion + steps.length;
+        track.attrs.deltas.push(message.data);
+        track.attrs.deltas = track.attrs.deltas.slice(-1000);
+
+        chapter.composition.content[input.where.trackId] = track;
+        await chaptersAPI.update(input.where.chapterId, chapter);
         chaptersEmitter.emit("documentTrack", message);
-        return documentTrackDelta;
-      } else {
+
+        return message.data;
+      } else if (input.action === "created") {
         chapter.composition.content[input.data.attrs.id] = input.data;
+        await chaptersAPI.update(input.where.chapterId, chapter);
+        return input.data;
+      } else {
+        delete chapter.composition.content[input.data.attrs.id];
         await chaptersAPI.update(input.where.chapterId, chapter);
         return input.data;
       }
