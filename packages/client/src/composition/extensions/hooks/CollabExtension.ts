@@ -1,12 +1,12 @@
-import { DocumentTrack, DocumentTrackChange, getAttrs } from "@taep/core";
+import { DocumentTrack, DocumentTrackDelta, getAttrs } from "@taep/core";
 import { collab, getVersion, receiveTransaction, sendableSteps } from "prosemirror-collab";
 import { Plugin, TextSelection } from "prosemirror-state";
 import { Step } from "prosemirror-transform";
 import { HookExtension } from "../Extension";
 
 export interface CollabExtensionOptions {
-  publish: (data: DocumentTrackChange) => Promise<DocumentTrackChange | DocumentTrack>;
-  onSubscribe: (dispatch: (data: DocumentTrackChange) => void) => () => void;
+  publish: (data: DocumentTrackDelta) => Promise<DocumentTrackDelta | DocumentTrack>;
+  onSubscribe: (dispatch: (data: DocumentTrackDelta) => void) => () => void;
 }
 
 export class CollabExtension extends HookExtension {
@@ -26,15 +26,15 @@ export class CollabExtension extends HookExtension {
       }),
       collabSync: new Plugin({
         view: view => {
-          const dispatch = async (data: DocumentTrackChange[]) => {
+          const dispatch = async (data: DocumentTrackDelta[]) => {
             if (data[0]?.version !== getVersion(view.state)) return;
 
             const state = this.editor.state;
             const steps: Step[] = [];
             const clientIds: string[] = [];
-            for (const { changes, clientId } of data) {
-              steps.push(...changes.map(step => Step.fromJSON(state.schema, step)));
-              clientIds.push(...changes.map(() => clientId));
+            for (const { steps, clientId } of data) {
+              steps.push(...steps.map(step => Step.fromJSON(state.schema, step)));
+              clientIds.push(...steps.map(() => clientId));
             }
 
             view.dispatch(receiveTransaction(view.state, steps, clientIds));
@@ -49,17 +49,18 @@ export class CollabExtension extends HookExtension {
               if (!message) return;
 
               const data = await publish({
+                type: "delta",
                 clientId: message.clientID as string,
                 version: message.version,
-                changes: message.steps.map(step => step.toJSON())
+                steps: message.steps.map(step => step.toJSON())
               });
 
-              if ("version" in data) return dispatch([data]);
+              if (data.type === "delta") return dispatch([data]);
 
               const version = getVersion(view.state);
-              const idx = data.attrs.changes.findIndex(change => change.version === version);
+              const idx = data.attrs.deltas.findIndex(change => change.version === version);
               if (idx !== -1) {
-                dispatch(data.attrs.changes.slice(idx));
+                dispatch(data.attrs.deltas.slice(idx));
               } else {
                 // replace document state to get it back in sync
                 const state = this.editor.state;

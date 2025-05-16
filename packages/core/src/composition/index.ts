@@ -1,8 +1,8 @@
-import { DocumentSegment, DocumentTrack, DocumentTrackChange } from "./DocumentTrack";
-import { MediaTrack, MediaSegment, MediaTrackChange } from "./MediaTrack";
+import { DocumentSegment, DocumentTrack, DocumentTrackDelta } from "./DocumentTrack";
+import { MediaTrack, MediaSegment, MediaTrackDelta } from "./MediaTrack";
 
 export type Track = DocumentTrack | MediaTrack;
-export type TrackChange = DocumentTrackChange | MediaTrackChange;
+export type TrackDelta = DocumentTrackDelta | MediaTrackDelta;
 
 export type Segment = MediaSegment | DocumentSegment;
 export interface Composition {

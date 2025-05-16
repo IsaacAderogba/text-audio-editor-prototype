@@ -1,5 +1,3 @@
-import { DocumentTrackChange } from "./DocumentTrack";
-
 export type MediaTrack = VideoTrack | AudioTrack;
 
 export interface VideoTrack {
@@ -21,15 +19,16 @@ export interface AudioTrackAttrs extends MediaTrackAttrs {}
 interface MediaTrackAttrs {
   id: string;
   latestVersion: number;
-  changes: DocumentTrackChange[];
+  deltas: MediaTrackDelta[];
   createdAt: string;
   updatedAt: string;
 }
 
-export type MediaTrackChange = {
+export type MediaTrackDelta = {
+  type: "delta";
   version: number;
   clientId: string;
-  changes: object[];
+  deltas: object[];
 };
 
 export type MediaSegment = FrameSegment | SampleSegment;

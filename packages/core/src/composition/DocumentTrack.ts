@@ -15,15 +15,16 @@ export type PageTrack = {
 export interface DocumentTrackAttrs {
   id: string;
   latestVersion: number;
-  changes: DocumentTrackChange[];
+  deltas: DocumentTrackDelta[];
   createdAt: string;
   updatedAt: string;
 }
 
-export type DocumentTrackChange = {
+export type DocumentTrackDelta = {
+  type: "delta";
   version: number;
   clientId: string;
-  changes: object[];
+  steps: object[];
 };
 
 /**

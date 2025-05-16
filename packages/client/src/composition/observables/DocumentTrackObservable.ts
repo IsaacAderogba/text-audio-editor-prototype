@@ -45,17 +45,20 @@ export class DocumentTrackObservable<T extends DocumentTrack = DocumentTrack> ex
       extensions: [
         new AttrsExtension(),
         new CollabExtension({
-          publish: async change => {
+          publish: async data => {
             return await client.chapter.documentTrackChange.mutate({
               action: "updated",
-              data: { chapterId: composition.chapter.state.id, trackId: state.attrs.id, change }
+              where: { chapterId: composition.chapter.state.id, trackId: state.attrs.id },
+              data
             });
           },
           onSubscribe: dispatch => {
             const { unsubscribe } = client.chapter.onDocumentTrackChange.subscribe(
-              { trackId: state.attrs.id },
+              { where: { chapterId: composition.chapter.state.id, trackId: state.attrs.id } },
               {
-                onData: message => dispatch(message.data.change),
+                onData: message => {
+                  if ("version" in message.data) dispatch(message.data);
+                },
                 onError: err => console.error("error", err)
               }
             );
