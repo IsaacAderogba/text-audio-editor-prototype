@@ -1,4 +1,4 @@
-import { Chapter, ChapterTrackMessage, DocumentTrackChange, pageSchema } from "@taep/core";
+import { Chapter, DocumentTrackChangeMessage, DocumentTrackChange, pageSchema } from "@taep/core";
 import { EventEmitter, on } from "events";
 import { Step } from "prosemirror-transform";
 import { createDatabaseAdapter } from "../services/database.js";
@@ -54,9 +54,9 @@ const chapterRouter = router({
       return chaptersAPI.delete(input.id);
     }),
 
-  trackChange: procedure
+  documentTrackChange: procedure
     .input(input => {
-      return input as ChapterTrackMessage;
+      return input as DocumentTrackChangeMessage;
     })
     .mutation(async ({ input }) => {
       const { chapterId, trackId, change: trackChange } = input.data;
@@ -98,7 +98,7 @@ const chapterRouter = router({
       track.attrs.changes = track.attrs.changes.slice(-1000);
       await chaptersAPI.update(chapterId, chapter);
 
-      const message: ChapterTrackMessage = {
+      const message: DocumentTrackChangeMessage = {
         action: "updated",
         data: { chapterId, trackId, change: documentTrackChange }
       };
@@ -107,7 +107,7 @@ const chapterRouter = router({
       return documentTrackChange;
     }),
 
-  onTrackChange: procedure
+  onDocumentTrackChange: procedure
     .input(input => {
       return input as {
         trackId: string;
@@ -115,82 +115,10 @@ const chapterRouter = router({
     })
     .subscription(async function* ({ input, signal }) {
       for await (const [data] of on(chaptersEmitter, "trackChange", { signal })) {
-        const message = data as ChapterTrackMessage;
+        const message = data as DocumentTrackChangeMessage;
         if (message.data.trackId === input.trackId) yield message;
       }
     })
 });
-
-/**
- * so, if i try to make a change that doesn't work,
- * should get the latest state and then use that...
- * it would be nice if it could handle it itself internally...
- */
-
-// const authority = authorities.get(message.authorityId);
-// if (!authority) return;
-// try {
-//   const version = authority.applyInput(message);
-//   if (version !== undefined) {
-//     socket.emit("message", authority.deriveOutput(version));
-//   }
-// } catch (err) {
-//   console.error(err);
-// }
-
-// class Authority {
-//   constructor(doc) {
-//     this.doc = doc;
-//     this.steps = [];
-//     this.stepClientIDs = [];
-//     this.onNewSteps = [];
-//   }
-
-//   receiveSteps(version, steps, clientID) {
-//     if (version != this.steps.length) return;
-
-//     // Apply and accumulate new steps
-//     steps.forEach(step => {
-//       this.doc = step.apply(this.doc).doc;
-//       this.steps.push(step);
-//       this.stepClientIDs.push(clientID);
-//     });
-//     // Signal listeners
-//     this.onNewSteps.forEach(function (f) {
-//       f();
-//     });
-//   }
-
-//   stepsSince(version) {
-//     return {
-//       steps: this.steps.slice(version),
-//       clientIDs: this.stepClientIDs.slice(version)
-//     };
-//   }
-// }
-
-// const authority = new Authority();
-
-// function collabEditor(place) {
-//   const view = new EditorView(place, {
-//     state: EditorState.create({
-//       doc: authority.doc,
-//       plugins: [collab({ version: authority.steps.length })]
-//     }),
-//     dispatchTransaction(transaction) {
-//       const newState = view.state.apply(transaction);
-//       view.updateState(newState);
-//       const sendable = sendableSteps(newState);
-//       if (sendable) authority.receiveSteps(sendable.version, sendable.steps, sendable.clientID);
-//     }
-//   });
-
-//   authority.onNewSteps.push(function () {
-//     const newData = authority.stepsSince(getVersion(view.state));
-//     view.dispatch(receiveTransaction(view.state, newData.steps, newData.clientIDs));
-//   });
-
-//   return view;
-// }
 
 export { chapterRouter };

@@ -4,16 +4,16 @@ import { merge, omit } from "lodash-es";
 import { DocumentSegmentObservable, DocumentTrackObservable } from "./DocumentTrackObservable";
 import { MediaSegmentObservable, MediaTrackObservable } from "./MediaTrackObservable";
 import { ChapterObservable } from "../../store/entities";
-import { EventEmitter } from "../../utilities/EventEmitter";
+import { EventChangeMetadata, EventEmitter } from "../../utilities/EventEmitter";
 import { DeepPartial } from "../../utilities/types";
 
 export type TrackObservable = DocumentTrackObservable | MediaTrackObservable;
 export type SegmentObservable = DocumentSegmentObservable | MediaSegmentObservable;
 
 export type CompositionEvents = {
-  update: (data: CompositionObservable) => void;
-  trackUpdate: (data: TrackObservable) => void;
-  segmentUpdate: (data: SegmentObservable) => void;
+  change: (data: CompositionObservable, metadata: EventChangeMetadata) => void;
+  trackChange: (data: TrackObservable, metadata: EventChangeMetadata) => void;
+  segmentChange: (data: SegmentObservable, metadata: EventChangeMetadata) => void;
 };
 export class CompositionObservable extends EventEmitter<CompositionEvents> {
   chapter: ChapterObservable;
@@ -38,7 +38,7 @@ export class CompositionObservable extends EventEmitter<CompositionEvents> {
   update(state: DeepPartial<Pick<Composition, "attrs">>) {
     merge(this.state.attrs, state.attrs);
 
-    this.emit("update", this);
+    this.emit("change", this, { action: "updated" });
   }
 
   toJSON(): Composition {

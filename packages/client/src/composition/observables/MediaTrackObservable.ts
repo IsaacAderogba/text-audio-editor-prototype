@@ -3,35 +3,49 @@ import { merge, omit } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
 import { DeepPartial } from "../../utilities/types";
 import type { CompositionObservable } from "./CompositionObservable";
-import { EventEmitter } from "../../utilities/EventEmitter";
+import { EventChangeMetadata, EventEmitter } from "../../utilities/EventEmitter";
 
-export type MediaTrackEvents = {
-  update: (data: MediaTrackObservable) => void;
-  segmentUpdate: (data: MediaSegmentObservable) => void;
+export type MediaTrackEvents<T extends MediaTrack> = {
+  change: (data: MediaTrackObservable<T>, metadata: EventChangeMetadata) => void;
+  segmentChange: (data: MediaSegmentObservable, metadata: EventChangeMetadata) => void;
 };
 
-export class MediaTrackObservable extends EventEmitter<MediaTrackEvents> {
+export class MediaTrackObservable<T extends MediaTrack = MediaTrack> extends EventEmitter<
+  MediaTrackEvents<T>
+> {
   composition: CompositionObservable;
 
-  state: Omit<MediaTrack, "content">;
-  segments: Record<string, MediaSegmentObservable<MediaSegment>> = {};
+  state: Omit<T, "content">;
+  segments: Record<string, MediaSegmentObservable<T["content"][""]>> = {};
 
-  constructor(composition: CompositionObservable, state: MediaTrack) {
+  constructor(composition: CompositionObservable, state: T) {
     super();
 
     makeAutoObservable(this);
     this.composition = composition;
     this.state = omit(state, "content");
-    Object.values(state.content).forEach(segment => {
-      this.segments[segment.attrs.id] = new MediaSegmentObservable(this, segment);
-    });
+    Object.values(state.content).forEach(segment => this.createSegment(segment));
   }
 
-  update(state: DeepPartial<Pick<MediaSegment, "attrs">>) {
+  update(state: DeepPartial<Pick<T, "attrs">>) {
     merge(this.state.attrs, state.attrs, { updatedAt: new Date().toISOString() });
 
-    this.emit("update", this);
-    this.composition.emit("trackUpdate", this);
+    this.emit("change", this, { action: "updated" });
+    this.composition.emit("trackChange", this, { action: "updated" });
+  }
+
+  createSegment(segment: T["content"][""]) {
+    this.segments[segment.attrs.id] = new MediaSegmentObservable(this, segment);
+    this.emit("segmentChange", this.segments[segment.attrs.id], { action: "created" });
+  }
+
+  deleteSegment(id: string) {
+    const segment = this.segments[id];
+    if (segment) {
+      delete this.segments[id];
+      segment.listeners.clear();
+      this.emit("segmentChange", segment, { action: "deleted" });
+    }
   }
 
   toJSON() {
@@ -40,12 +54,12 @@ export class MediaTrackObservable extends EventEmitter<MediaTrackEvents> {
       content[segment.state.attrs.id] = segment.toJSON();
     });
 
-    return { ...toJS(this.state), content } as MediaTrack;
+    return { ...toJS(this.state), content } as T;
   }
 }
 
 export type MediaSegmentEvents<T extends MediaSegment> = {
-  update: (data: MediaSegmentObservable<T>) => void;
+  change: (data: MediaSegmentObservable<T>, metadata: EventChangeMetadata) => void;
 };
 
 export class MediaSegmentObservable<T extends MediaSegment = MediaSegment> extends EventEmitter<
@@ -65,9 +79,10 @@ export class MediaSegmentObservable<T extends MediaSegment = MediaSegment> exten
   update(state: DeepPartial<Pick<T, "attrs">>) {
     merge(this.state.attrs, state.attrs, { updatedAt: new Date().toISOString() });
 
-    this.emit("update", this);
-    this.track.emit("segmentUpdate", this);
-    this.track.composition.emit("segmentUpdate", this);
+    const metadata: EventChangeMetadata = { action: "updated" };
+    this.emit("change", this, metadata);
+    this.track.emit("segmentChange", this, metadata);
+    this.track.composition.emit("segmentChange", this, metadata);
   }
 
   toJSON(): T {

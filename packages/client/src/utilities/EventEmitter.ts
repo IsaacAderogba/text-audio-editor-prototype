@@ -24,3 +24,7 @@ export class EventEmitter<T extends Events> {
     this.listeners.get(event)?.forEach(callback => callback(...args));
   }
 }
+
+export interface EventChangeMetadata {
+  action: "created" | "updated" | "deleted";
+}
