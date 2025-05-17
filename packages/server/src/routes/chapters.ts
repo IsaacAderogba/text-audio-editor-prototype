@@ -2,7 +2,6 @@ import {
   AudioCompositionMessage,
   Chapter,
   CompositionMessage,
-  CompositionMessageWhere,
   PageCompositionMessage,
   VideoCompositionMessage,
   pageSchema
@@ -207,11 +206,11 @@ const chapterRouter = router({
     }),
 
   onCompositionChange: procedure
-    .input(input => input as { where: CompositionMessageWhere })
+    .input(input => input as { where: { chapterId: string } })
     .subscription(async function* ({ input, signal }) {
       for await (const [data] of on(chaptersEmitter, "composition", { signal })) {
         const message = data as CompositionMessage;
-        if (message.where.trackId === input.where.trackId) yield message;
+        if (message.where.chapterId === input.where.chapterId) yield message;
       }
     })
 });

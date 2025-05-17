@@ -1,12 +1,13 @@
-import { Composition } from "@taep/core";
+import { Composition, CompositionMessage } from "@taep/core";
 import { merge, omit } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
 import { ChapterObservable } from "../../store/entities";
 import { EventChangeMetadata, EventEmitter } from "../../utilities/EventEmitter";
+import { client } from "../../utilities/trpc";
 import { DeepPartial } from "../../utilities/types";
-import { PageSegmentObservable, PageTrackObservable } from "./DocumentTrackObservable";
-import { VideoSegmentObservable, VideoTrackObservable } from "./VideoTrackObservable";
 import { AudioSegmentObservable, AudioTrackObservable } from "./AudioTrackObservable";
+import { PageSegmentObservable, PageTrackObservable } from "./PageTrackObservable";
+import { VideoSegmentObservable, VideoTrackObservable } from "./VideoTrackObservable";
 
 export type TrackObservable = PageTrackObservable | VideoTrackObservable | AudioTrackObservable;
 export type SegmentObservable =
@@ -18,6 +19,8 @@ export type CompositionEvents = {
   change: (data: CompositionObservable, metadata: EventChangeMetadata) => void;
   trackChange: (data: TrackObservable, metadata: EventChangeMetadata) => void;
   segmentChange: (data: SegmentObservable, metadata: EventChangeMetadata) => void;
+
+  trackMessage: (data: CompositionMessage) => void;
 };
 export class CompositionObservable extends EventEmitter<CompositionEvents> {
   chapter: ChapterObservable;
@@ -55,5 +58,20 @@ export class CompositionObservable extends EventEmitter<CompositionEvents> {
     });
 
     return { ...toJS(this.state), content };
+  }
+
+  subscribe() {
+    const { unsubscribe } = client.chapter.onCompositionChange.subscribe(
+      { where: { chapterId: this.chapter.state.id } },
+      {
+        onData: message => this.emit("trackMessage", message),
+        onError: err => console.error("trackMessage error", err)
+      }
+    );
+
+    return () => {
+      this.listeners.clear();
+      unsubscribe();
+    };
   }
 }

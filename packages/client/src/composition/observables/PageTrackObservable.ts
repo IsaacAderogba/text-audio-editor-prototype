@@ -51,17 +51,10 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
             });
           },
           onSubscribe: dispatch => {
-            const { unsubscribe } = client.chapter.documentCompositionChange.subscribe(
-              { where: { chapterId: composition.chapter.state.id, trackId: state.attrs.id } },
-              {
-                onData: message => {
-                  if ("version" in message.data) dispatch(message.data);
-                },
-                onError: err => console.error("error", err)
-              }
-            );
-
-            return unsubscribe;
+            return this.composition.on("trackMessage", message => {
+              if (message.type !== "page" || message.where.trackId !== state.attrs.id) return;
+              if ("version" in message.data.change) dispatch(message.data.change);
+            });
           }
         }),
         new CommandsExtension(),

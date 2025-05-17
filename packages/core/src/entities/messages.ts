@@ -7,7 +7,10 @@ import {
   AudioTrackDelta
 } from "../composition";
 
-export type CompositionMessage = PageCompositionMessage | VideoCompositionMessage;
+export type CompositionMessage =
+  | PageCompositionMessage
+  | VideoCompositionMessage
+  | AudioCompositionMessage;
 
 export type PageCompositionMessage = {
   type: "page";
