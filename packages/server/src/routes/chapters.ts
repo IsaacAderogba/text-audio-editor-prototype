@@ -73,9 +73,6 @@ const chapterRouter = router({
       const { chapter, track } = await findChapterTrack<VideoTrack>("video", where);
 
       if (data.action === "updated") {
-        const latestVersion = track.attrs.latestVersion;
-        if (latestVersion !== data.change.version) return track;
-
         for (const step of data.change.steps) {
           if (step.data.type === "video") {
             Object.assign(track, step.data);
@@ -86,7 +83,6 @@ const chapterRouter = router({
           }
         }
 
-        track.attrs.latestVersion = latestVersion + data.change.steps.length;
         track.attrs.deltas.push(data.change);
         track.attrs.deltas = track.attrs.deltas.slice(-1000);
 
@@ -112,9 +108,6 @@ const chapterRouter = router({
       const { chapter, track } = await findChapterTrack<AudioTrack>("audio", where);
 
       if (data.action === "updated") {
-        const latestVersion = track.attrs.latestVersion;
-        if (latestVersion !== data.change.version) return track;
-
         for (const step of data.change.steps) {
           if (step.data.type === "audio") {
             Object.assign(track, step.data);
@@ -125,7 +118,6 @@ const chapterRouter = router({
           }
         }
 
-        track.attrs.latestVersion = latestVersion + data.change.steps.length;
         track.attrs.deltas.push(data.change);
         track.attrs.deltas = track.attrs.deltas.slice(-1000);
 

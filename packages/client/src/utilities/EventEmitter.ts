@@ -1,12 +1,10 @@
 type KeyOf<T> = Extract<keyof T, string>;
 
-interface Events {
+export interface EventEmitterEvents {
   [key: string]: (...args: any) => void;
 }
 
-export type EventsApi<T extends Events> = T;
-
-export class EventEmitter<T extends Events> {
+export class EventEmitter<T extends EventEmitterEvents> {
   protected listeners = new Map<string, Set<Function>>();
 
   public on<E extends KeyOf<T>>(event: E, cb: T[E]) {

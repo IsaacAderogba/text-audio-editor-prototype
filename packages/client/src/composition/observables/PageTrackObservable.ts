@@ -43,15 +43,7 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
       doc: pageSchema.nodeFromJSON(state),
       extensions: [
         new AttrsExtension(),
-        new CollabExtension({
-          onDelta: async delta => {
-            return await client.chapter.pageCompositionChange.mutate({
-              type: "page",
-              where: { chapterId: composition.chapter.state.id, trackId: state.attrs.id },
-              data: { action: "updated", change: delta }
-            });
-          }
-        }),
+        new CollabExtension({ onDelta: async delta => this.sendDelta(delta) }),
         new CommandsExtension(),
         new HistoryExtension(),
 
@@ -72,19 +64,19 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
     });
   }
 
-  handleUpdateDelta(delta: PageTrackDelta) {
+  handleDelta(delta: PageTrackDelta) {
     const extension = this.editor.extensions.get(CollabExtension.name);
-    if (extension instanceof CollabExtension) extension.dispatchDelta([delta]);
+    if (extension instanceof CollabExtension) extension.sendDelta([delta]);
   }
 
-  async sendUpdateDelta(delta: PageTrackDelta) {
+  sendDelta = (delta: PageTrackDelta): Promise<PageTrackDelta | PageTrack> => {
     const trackId = this.editor.state.doc.attrs.id;
-    return await client.chapter.pageCompositionChange.mutate({
+    return client.chapter.pageCompositionChange.mutate({
       type: "page",
       where: { chapterId: this.composition.chapter.state.id, trackId },
       data: { action: "updated", change: delta }
     });
-  }
+  };
 
   handleTransaction(transaction: Transaction) {
     const prevState = this.editor.state;

@@ -1,7 +1,8 @@
-import { AudioSegment, AudioTrack, AudioTrackDelta, CompositionMessage } from "@taep/core";
-import { merge, omit } from "lodash-es";
+import { AudioSegment, AudioTrack, AudioTrackDelta, AudioTrackDeltaStep } from "@taep/core";
+import { merge, omit, throttle } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
 import { EventChangeMetadata, EventEmitter } from "../../utilities/EventEmitter";
+import { client } from "../../utilities/trpc";
 import { DeepPartial } from "../../utilities/types";
 import type { CompositionObservable } from "./CompositionObservable";
 
@@ -25,9 +26,36 @@ export class AudioTrackObservable extends EventEmitter<AudioTrackEvents> {
     Object.values(state.content).forEach(segment => this.createSegment(segment));
   }
 
-  handleUpdateDelta(delta: AudioTrackDelta) {
+  steps: AudioTrackDeltaStep[] = [];
+  handleDelta(delta: AudioTrackDelta) {
     for (const step of delta.steps) {
+      if (step.data.type === "audio") {
+        this.update(step.data);
+      } else if (step.action === "created") {
+        this.createSegment(step.data);
+      } else if (step.action === "updated") {
+        this.updateSegment(step.data.attrs.id, step.data);
+      } else if (step.action === "deleted") {
+        this.deleteSegment(step.data.attrs.id);
+      }
     }
+  }
+
+  sendDelta = throttle(async (delta: AudioTrackDelta) => {
+    const index = this.steps.length - 1;
+    const response = await client.chapter.audioCompositionChange.mutate({
+      type: "audio",
+      where: { chapterId: this.composition.chapter.state.id, trackId: this.state.attrs.id },
+      data: { action: "updated", change: delta }
+    });
+
+    this.steps = this.steps.slice(index);
+    if (response.type === "delta") this.handleDelta(response);
+  });
+
+  createDeltaStep(step: AudioTrackDeltaStep) {
+    this.steps.push(step);
+    this.sendDelta({ type: "delta", clientId: this.composition.clientId, steps: this.steps });
   }
 
   update(state: DeepPartial<Pick<AudioTrack, "attrs">>) {
@@ -35,23 +63,28 @@ export class AudioTrackObservable extends EventEmitter<AudioTrackEvents> {
 
     this.emit("change", this, { action: "updated" });
     this.composition.emit("trackChange", this, { action: "updated" });
+    this.createDeltaStep({ type: "audio", action: "updated", data: toJS(this.state) });
   }
 
-  createSegment(segment: AudioSegment) {
-    this.segments[segment.attrs.id] = new AudioSegmentObservable(this, segment);
-    this.emit("segmentChange", this.segments[segment.attrs.id], { action: "created" });
+  createSegment(data: AudioSegment) {
+    const segment = new AudioSegmentObservable(this, data);
+    this.segments[data.attrs.id] = segment;
+    this.emit("segmentChange", segment, { action: "created" });
+
+    this.createDeltaStep({ type: "audio", action: "created", data: segment.toJSON() });
   }
 
-  updateSegment(id: string, state: DeepPartial<Pick<AudioSegment, "attrs">>) {
-    this.segments[id]?.update(state);
+  updateSegment(id: string, data: DeepPartial<Pick<AudioSegment, "attrs">>) {
+    this.segments[id]?.update(data);
   }
 
   deleteSegment(id: string) {
     const segment = this.segments[id];
-    if (segment) {
-      delete this.segments[id];
-      this.emit("segmentChange", segment, { action: "deleted" });
-    }
+    if (!segment) return;
+
+    delete this.segments[id];
+    this.emit("segmentChange", segment, { action: "deleted" });
+    this.createDeltaStep({ type: "audio", action: "deleted", data: segment.toJSON() });
   }
 
   toJSON() {
@@ -87,6 +120,8 @@ export class AudioSegmentObservable extends EventEmitter<AudioSegmentEvents> {
     this.emit("change", this, metadata);
     this.track.emit("segmentChange", this, metadata);
     this.track.composition.emit("segmentChange", this, metadata);
+
+    this.track.createDeltaStep({ type: "audio", action: "updated", data: this.toJSON() });
   }
 
   toJSON(): AudioSegment {

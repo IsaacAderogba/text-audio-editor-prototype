@@ -15,7 +15,7 @@ export class CollabExtension extends HookExtension {
     super();
   }
 
-  dispatchDelta: (data: DocumentTrackDelta[]) => void = () => {};
+  sendDelta: (data: DocumentTrackDelta[]) => void = () => {};
   initializePlugins = () => {
     const { onDelta } = this.options;
 
@@ -26,7 +26,7 @@ export class CollabExtension extends HookExtension {
       }),
       collabSync: new Plugin({
         view: view => {
-          this.dispatchDelta = async data => {
+          this.sendDelta = async data => {
             if (data[0]?.version !== getVersion(view.state)) return;
 
             const state = this.editor.state;
@@ -52,12 +52,12 @@ export class CollabExtension extends HookExtension {
                 steps: message.steps.map(step => step.toJSON())
               });
 
-              if (data.type === "delta") return this.dispatchDelta([data]);
+              if (data.type === "delta") return this.sendDelta([data]);
 
               const version = getVersion(view.state);
               const idx = data.attrs.deltas.findIndex(change => change.version === version);
               if (idx !== -1) {
-                this.dispatchDelta(data.attrs.deltas.slice(idx));
+                this.sendDelta(data.attrs.deltas.slice(idx));
               } else {
                 // replace document state to get it back in sync
                 const state = this.editor.state;

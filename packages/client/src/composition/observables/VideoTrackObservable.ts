@@ -1,7 +1,8 @@
-import { CompositionMessage, VideoSegment, VideoTrack, VideoTrackDelta } from "@taep/core";
-import { merge, omit } from "lodash-es";
+import { VideoSegment, VideoTrack, VideoTrackDelta, VideoTrackDeltaStep } from "@taep/core";
+import { merge, omit, throttle } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
 import { EventChangeMetadata, EventEmitter } from "../../utilities/EventEmitter";
+import { client } from "../../utilities/trpc";
 import { DeepPartial } from "../../utilities/types";
 import type { CompositionObservable } from "./CompositionObservable";
 
@@ -25,9 +26,36 @@ export class VideoTrackObservable extends EventEmitter<VideoTrackEvents> {
     Object.values(state.content).forEach(segment => this.createSegment(segment));
   }
 
-  handleUpdateDelta(delta: VideoTrackDelta) {
+  steps: VideoTrackDeltaStep[] = [];
+  handleDelta(delta: VideoTrackDelta) {
     for (const step of delta.steps) {
+      if (step.data.type === "video") {
+        this.update(step.data);
+      } else if (step.action === "created") {
+        this.createSegment(step.data);
+      } else if (step.action === "updated") {
+        this.updateSegment(step.data.attrs.id, step.data);
+      } else if (step.action === "deleted") {
+        this.deleteSegment(step.data.attrs.id);
+      }
     }
+  }
+
+  sendDelta = throttle(async (delta: VideoTrackDelta) => {
+    const index = this.steps.length - 1;
+    const response = await client.chapter.videoCompositionChange.mutate({
+      type: "video",
+      where: { chapterId: this.composition.chapter.state.id, trackId: this.state.attrs.id },
+      data: { action: "updated", change: delta }
+    });
+
+    this.steps = this.steps.slice(index);
+    if (response.type === "delta") this.handleDelta(response);
+  });
+
+  createDeltaStep(step: VideoTrackDeltaStep) {
+    this.steps.push(step);
+    this.sendDelta({ type: "delta", clientId: this.composition.clientId, steps: this.steps });
   }
 
   update(state: DeepPartial<Pick<VideoTrack, "attrs">>) {
@@ -35,23 +63,28 @@ export class VideoTrackObservable extends EventEmitter<VideoTrackEvents> {
 
     this.emit("change", this, { action: "updated" });
     this.composition.emit("trackChange", this, { action: "updated" });
+    this.createDeltaStep({ type: "video", action: "updated", data: toJS(this.state) });
   }
 
-  createSegment(segment: VideoSegment) {
-    this.segments[segment.attrs.id] = new VideoSegmentObservable(this, segment);
-    this.emit("segmentChange", this.segments[segment.attrs.id], { action: "created" });
+  createSegment(data: VideoSegment) {
+    const segment = new VideoSegmentObservable(this, data);
+    this.segments[data.attrs.id] = segment;
+    this.emit("segmentChange", segment, { action: "created" });
+
+    this.createDeltaStep({ type: "video", action: "created", data: segment.toJSON() });
   }
 
-  updateSegment(id: string, state: DeepPartial<Pick<VideoSegment, "attrs">>) {
-    this.segments[id]?.update(state);
+  updateSegment(id: string, data: DeepPartial<Pick<VideoSegment, "attrs">>) {
+    this.segments[id]?.update(data);
   }
 
   deleteSegment(id: string) {
     const segment = this.segments[id];
-    if (segment) {
-      delete this.segments[id];
-      this.emit("segmentChange", segment, { action: "deleted" });
-    }
+    if (!segment) return;
+
+    delete this.segments[id];
+    this.emit("segmentChange", segment, { action: "deleted" });
+    this.createDeltaStep({ type: "video", action: "deleted", data: segment.toJSON() });
   }
 
   toJSON() {
@@ -87,6 +120,8 @@ export class VideoSegmentObservable extends EventEmitter<VideoSegmentEvents> {
     this.emit("change", this, metadata);
     this.track.emit("segmentChange", this, metadata);
     this.track.composition.emit("segmentChange", this, metadata);
+
+    this.track.createDeltaStep({ type: "video", action: "updated", data: this.toJSON() });
   }
 
   toJSON(): VideoSegment {

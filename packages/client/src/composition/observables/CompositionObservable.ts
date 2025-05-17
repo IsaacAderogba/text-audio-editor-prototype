@@ -1,6 +1,7 @@
 import { Composition, Track } from "@taep/core";
 import { merge, omit } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
+import { v4 } from "uuid";
 import { ChapterObservable } from "../../store/entities";
 import { EventChangeMetadata, EventEmitter } from "../../utilities/EventEmitter";
 import { client } from "../../utilities/trpc";
@@ -8,7 +9,6 @@ import { DeepPartial } from "../../utilities/types";
 import { AudioSegmentObservable, AudioTrackObservable } from "./AudioTrackObservable";
 import { PageSegmentObservable, PageTrackObservable } from "./PageTrackObservable";
 import { VideoSegmentObservable, VideoTrackObservable } from "./VideoTrackObservable";
-import { v4 } from "uuid";
 
 export type TrackObservable = PageTrackObservable | VideoTrackObservable | AudioTrackObservable;
 export type SegmentObservable =
@@ -75,7 +75,8 @@ export class CompositionObservable extends EventEmitter<CompositionEvents> {
             this.deleteTrack(message.data.change.attrs.id);
           } else {
             const track = this.tracks[message.where.trackId];
-            if (track && track) track.handleUpdateDelta(message.data.change);
+            // @ts-expect-error - todo
+            if (track && track) track.handleDelta(message.data.change);
           }
         },
         onError: err => console.error("trackMessage error", err)
