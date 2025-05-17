@@ -2,11 +2,12 @@ import { CompositionDelta, SegmentAttrs, TrackAttrs } from "./Shared";
 
 export type MediaTrack = VideoTrack | AudioTrack;
 export type MediaTrackDelta = VideoTrackDelta | AudioTrackDelta;
+export type MediaSegment = VideoSegment | AudioSegment;
 
 export interface VideoTrack {
   type: "video";
   attrs: VideoTrackAttrs;
-  content: Record<string, FrameSegment>;
+  content: Record<string, VideoSegment>;
 }
 
 export interface VideoTrackAttrs extends TrackAttrs<VideoTrackDelta> {}
@@ -15,13 +16,15 @@ export type VideoTrackDelta = CompositionDelta<VideoTrackDeltaStep>;
 export type VideoTrackDeltaStep = {
   type: "video";
   action: "created" | "updated" | "deleted";
-  data: FrameSegment | Omit<VideoTrack, "content">;
+  data: VideoSegment | Omit<VideoTrack, "content">;
 };
+
+export type VideoSegment = FrameSegment;
 
 export interface AudioTrack {
   type: "audio";
   attrs: AudioTrackAttrs;
-  content: Record<string, SampleSegment>;
+  content: Record<string, AudioSegment>;
 }
 
 export interface AudioTrackAttrs extends TrackAttrs<AudioTrackDelta> {}
@@ -30,10 +33,10 @@ export type AudioTrackDelta = CompositionDelta<AudioTrackDeltaStep>;
 export type AudioTrackDeltaStep = {
   type: "audio";
   action: "created" | "updated" | "deleted";
-  data: SampleSegment | Omit<AudioTrack, "content">;
+  data: AudioSegment | Omit<AudioTrack, "content">;
 };
 
-export type MediaSegment = FrameSegment | SampleSegment;
+export type AudioSegment = SampleSegment;
 
 export interface FrameSegment {
   type: "frame";

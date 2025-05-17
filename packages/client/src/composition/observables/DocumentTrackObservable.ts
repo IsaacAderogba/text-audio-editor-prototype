@@ -1,4 +1,11 @@
-import { DocumentSegment, DocumentTrack, NodeGroup, pageSchema } from "@taep/core";
+import {
+  DocumentSegment,
+  DocumentTrack,
+  NodeGroup,
+  pageSchema,
+  PageSegment,
+  PageTrack
+} from "@taep/core";
 import { isArray, mergeWith } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
 import { Node } from "prosemirror-model";
@@ -12,28 +19,29 @@ import { CollabExtension } from "../extensions/hooks/CollabExtension";
 import { CommandsExtension } from "../extensions/hooks/CommandsExtension";
 import { HistoryExtension } from "../extensions/hooks/HistoryExtension";
 import { BoldExtension } from "../extensions/marks/BoldExtension";
-import { PageExtension } from "../extensions/nodes/PageExtension";
 import { ParagraphExtension } from "../extensions/nodes/ParagraphExtension";
 import { TextExtension } from "../extensions/nodes/TextExtension";
 import { VoiceExtension } from "../extensions/nodes/VoiceExtension";
-import { DocumentEditor } from "../prosemirror/DocumentEditor";
 import type { CompositionObservable } from "./CompositionObservable";
+import { DocumentEditor } from "../prosemirror/DocumentEditor";
+import { PageExtension } from "../extensions/nodes/PageExtension";
 
 interface ChangeMetadata {
   action: "created" | "updated" | "deleted";
 }
 
-export type DocumentTrackEvents<T extends DocumentTrack> = {
-  change: (data: DocumentTrackObservable<T>, metadata: ChangeMetadata) => void;
-  segmentChange: (data: DocumentSegmentObservable, metadata: ChangeMetadata) => void;
+type DocumentTrackEvents<T extends DocumentTrack, S extends DocumentSegment> = {
+  change: (data: DocumentTrackObservable<T, S>, metadata: ChangeMetadata) => void;
+  segmentChange: (data: DocumentSegmentObservable<T, S>, metadata: ChangeMetadata) => void;
 };
-export class DocumentTrackObservable<T extends DocumentTrack = DocumentTrack> extends EventEmitter<
-  DocumentTrackEvents<T>
-> {
+class DocumentTrackObservable<
+  T extends DocumentTrack,
+  S extends DocumentSegment
+> extends EventEmitter<DocumentTrackEvents<T, S>> {
   composition: CompositionObservable;
 
   editor: DocumentEditor;
-  segments: Record<string, DocumentSegmentObservable<DocumentSegment>> = {};
+  segments: Record<string, DocumentSegmentObservable<T, S>> = {};
 
   constructor(composition: CompositionObservable, state: T) {
     super();
@@ -45,15 +53,15 @@ export class DocumentTrackObservable<T extends DocumentTrack = DocumentTrack> ex
       extensions: [
         new AttrsExtension(),
         new CollabExtension({
-          publish: async data => {
-            return await client.chapter.documentTrackChange.mutate({
-              action: "updated",
+          publish: async change => {
+            return await client.chapter.pageCompositionChange.mutate({
+              type: "page",
               where: { chapterId: composition.chapter.state.id, trackId: state.attrs.id },
-              data
+              data: { action: "updated", change }
             });
           },
           onSubscribe: dispatch => {
-            const { unsubscribe } = client.chapter.onDocumentTrackChange.subscribe(
+            const { unsubscribe } = client.chapter.documentCompositionChange.subscribe(
               { where: { chapterId: composition.chapter.state.id, trackId: state.attrs.id } },
               {
                 onData: message => {
@@ -164,16 +172,17 @@ export class DocumentTrackObservable<T extends DocumentTrack = DocumentTrack> ex
   }
 }
 
-export type DocumentSegmentEvents<T extends DocumentSegment> = {
-  change: (data: DocumentSegmentObservable<T>, metadata: ChangeMetadata) => void;
+type DocumentSegmentEvents<T extends DocumentTrack, S extends DocumentSegment> = {
+  change: (data: DocumentSegmentObservable<T, S>, metadata: ChangeMetadata) => void;
 };
-export class DocumentSegmentObservable<
-  T extends DocumentSegment = DocumentSegment
-> extends EventEmitter<DocumentSegmentEvents<T>> {
-  track: DocumentTrackObservable;
-  state: T;
+class DocumentSegmentObservable<
+  T extends DocumentTrack,
+  S extends DocumentSegment
+> extends EventEmitter<DocumentSegmentEvents<T, S>> {
+  track: DocumentTrackObservable<T, S>;
+  state: S;
 
-  constructor(track: DocumentTrackObservable, state: T) {
+  constructor(track: DocumentTrackObservable<T, S>, state: S) {
     super();
 
     makeAutoObservable(this);
@@ -181,16 +190,14 @@ export class DocumentSegmentObservable<
     this.state = state;
   }
 
-  handleUpdate = (state: T) => {
+  handleUpdate = (state: S) => {
     mergeWith(this.state, state, (source, target) => {
       if (isArray(source)) return target || source;
     });
 
     const metadata: EventChangeMetadata = { action: "updated" };
     this.emit("change", this, metadata);
-    // @ts-expect-error - todo
     this.track.emit("segmentChange", this, metadata);
-    // @ts-expect-error - todo
     this.track.composition.emit("segmentChange", this, metadata);
   };
 
@@ -198,7 +205,10 @@ export class DocumentSegmentObservable<
     this.track.editor.chain().updateSegment(this.state.attrs.id, state).run();
   }
 
-  toJSON(): T {
+  toJSON(): S {
     return toJS(this.state);
   }
 }
+
+export class PageTrackObservable extends DocumentTrackObservable<PageTrack, PageSegment> {}
+export class PageSegmentObservable extends DocumentSegmentObservable<PageTrack, PageSegment> {}

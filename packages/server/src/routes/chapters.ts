@@ -1,11 +1,10 @@
 import {
+  AudioCompositionMessage,
   Chapter,
-  DocumentTrackMessage,
-  DocumentTrackMessageWhere,
-  MediaTrack,
-  MediaTrackDelta,
-  MediaTrackMessage,
-  MediaTrackMessageWhere,
+  CompositionMessage,
+  CompositionMessageWhere,
+  PageCompositionMessage,
+  VideoCompositionMessage,
   pageSchema
 } from "@taep/core";
 import { TRPCError } from "@trpc/server";
@@ -63,141 +62,155 @@ const chapterRouter = router({
       return chaptersAPI.delete(input.id);
     }),
 
-  mediaTrackChange: procedure
-    .input(input => input as MediaTrackMessage)
-    .mutation(async ({ input }) => {
-      const chapter = await chaptersAPI.read(input.where.chapterId);
+  videoCompositionChange: procedure
+    .input(input => input as VideoCompositionMessage)
+    .mutation(async ({ input: message }) => {
+      const { where, data } = message;
+      const chapter = await chaptersAPI.read(where.chapterId);
       if (!chapter) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Chapter not found" });
       }
 
-      const track = chapter.composition.content[input.where.trackId];
-      if (!track || track.type === "page") {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Track not found" });
+      const track = chapter.composition.content[where.trackId];
+      if (!track || track.type !== "video") {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Video track not found" });
       }
 
-      if (input.action === "updated") {
+      if (data.action === "updated") {
         const latestVersion = track.attrs.latestVersion;
-        if (latestVersion !== input.data.version) return track;
+        if (latestVersion !== data.change.version) return track;
 
-        const deltaRecord: Record<MediaTrack["type"], MediaTrackDelta> = {
-          video: { ...input.data, steps: input.data.steps.filter(step => step.type === "video") },
-          audio: { ...input.data, steps: input.data.steps.filter(step => step.type === "audio") }
-        };
-
-        for (const step of deltaRecord[track.type].steps) {
-          switch (step.data.type) {
-            case "video":
-            case "audio":
-              Object.assign(track, step.data);
-              break;
-            case "frame":
-            case "sample":
-              if (step.action === "deleted") {
-                delete track.content[step.data.attrs.id];
-              } else {
-                track.content[step.data.attrs.id] = step.data;
-              }
-              break;
+        for (const step of data.change.steps) {
+          if (step.data.type === "video") {
+            Object.assign(track, step.data);
+          } else if (step.action === "deleted") {
+            delete track.content[step.data.attrs.id];
+          } else {
+            track.content[step.data.attrs.id] = step.data;
           }
         }
 
-        const message: MediaTrackMessage = {
-          action: "updated",
-          where: input.where,
-          data: deltaRecord[track.type]
-        };
-
-        track.attrs.latestVersion = latestVersion + message.data.steps.length;
-        track.attrs.deltas.push(message.data as any);
+        track.attrs.latestVersion = latestVersion + data.change.steps.length;
+        track.attrs.deltas.push(data.change);
         track.attrs.deltas = track.attrs.deltas.slice(-1000);
 
-        chapter.composition.content[input.where.trackId] = track;
-        await chaptersAPI.update(input.where.chapterId, chapter);
-        chaptersEmitter.emit("mediaTrack", message);
+        chapter.composition.content[where.trackId] = track;
+        await chaptersAPI.update(where.chapterId, chapter);
+        chaptersEmitter.emit("composition", message);
 
-        return message.data;
-      } else if (input.action === "created") {
-        chapter.composition.content[input.data.attrs.id] = input.data;
-        await chaptersAPI.update(input.where.chapterId, chapter);
-        return input.data;
+        return data.change;
+      } else if (data.action === "created") {
+        chapter.composition.content[data.change.attrs.id] = data.change;
+        await chaptersAPI.update(where.chapterId, chapter);
+        return data.change;
       } else {
-        delete chapter.composition.content[input.data.attrs.id];
-        await chaptersAPI.update(input.where.chapterId, chapter);
-        return input.data;
+        delete chapter.composition.content[data.change.attrs.id];
+        await chaptersAPI.update(where.chapterId, chapter);
+        return data.change;
       }
     }),
-
-  onMediaTrackChange: procedure
-    .input(input => input as MediaTrackMessageWhere)
-    .subscription(async function* ({ input, signal }) {
-      for await (const [data] of on(chaptersEmitter, "mediaTrack", { signal })) {
-        const message = data as MediaTrackMessageWhere;
-        if (message.where.trackId === input.where.trackId) yield message;
-      }
-    }),
-
-  documentTrackChange: procedure
-    .input(input => input as DocumentTrackMessage)
-    .mutation(async ({ input }) => {
-      const chapter = await chaptersAPI.read(input.where.chapterId);
+  audioCompositionChange: procedure
+    .input(input => input as AudioCompositionMessage)
+    .mutation(async ({ input: message }) => {
+      const { where, data } = message;
+      const chapter = await chaptersAPI.read(where.chapterId);
       if (!chapter) {
         throw new TRPCError({ code: "NOT_FOUND", message: "Chapter not found" });
       }
 
-      const track = chapter.composition.content[input.where.trackId];
-      if (!track || track.type !== "page") {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Track not found" });
+      const track = chapter.composition.content[where.trackId];
+      if (!track || track.type !== "audio") {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Video track not found" });
       }
 
-      if (input.action === "updated") {
+      if (data.action === "updated") {
         const latestVersion = track.attrs.latestVersion;
-        if (latestVersion !== input.data.version) return track;
+        if (latestVersion !== data.change.version) return track;
+
+        for (const step of data.change.steps) {
+          if (step.data.type === "audio") {
+            Object.assign(track, step.data);
+          } else if (step.action === "deleted") {
+            delete track.content[step.data.attrs.id];
+          } else {
+            track.content[step.data.attrs.id] = step.data;
+          }
+        }
+
+        track.attrs.latestVersion = latestVersion + data.change.steps.length;
+        track.attrs.deltas.push(data.change);
+        track.attrs.deltas = track.attrs.deltas.slice(-1000);
+
+        chapter.composition.content[where.trackId] = track;
+        await chaptersAPI.update(where.chapterId, chapter);
+        chaptersEmitter.emit("composition", message);
+
+        return data.change;
+      } else if (data.action === "created") {
+        chapter.composition.content[data.change.attrs.id] = data.change;
+        await chaptersAPI.update(where.chapterId, chapter);
+        return data.change;
+      } else {
+        delete chapter.composition.content[data.change.attrs.id];
+        await chaptersAPI.update(where.chapterId, chapter);
+        return data.change;
+      }
+    }),
+
+  pageCompositionChange: procedure
+    .input(input => input as PageCompositionMessage)
+    .mutation(async ({ input: message }) => {
+      const { data, where } = message;
+      const chapter = await chaptersAPI.read(where.chapterId);
+      if (!chapter) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Chapter not found" });
+      }
+
+      const track = chapter.composition.content[where.trackId];
+      if (!track || track.type !== "page") {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Page track not found" });
+      }
+
+      if (data.action === "updated") {
+        const latestVersion = track.attrs.latestVersion;
+        if (latestVersion !== data.change.version) return track;
 
         let doc = pageSchema.nodeFromJSON(track);
-        const steps: object[] = [];
 
-        for (const stepJSON of input.data.steps) {
+        for (const stepJSON of data.change.steps) {
           const step = Step.fromJSON(pageSchema, stepJSON);
           const { doc: updatedDoc } = step.apply(doc);
           if (!updatedDoc) return track;
 
           doc = updatedDoc;
-          steps.push(input.data);
         }
 
-        const message: DocumentTrackMessage = {
-          action: "updated",
-          where: input.where,
-          data: { ...input.data, steps }
-        };
-
         Object.assign(track, doc.toJSON());
-        track.attrs.latestVersion = latestVersion + steps.length;
-        track.attrs.deltas.push(message.data);
+        track.attrs.latestVersion = latestVersion + data.change.steps.length;
+        track.attrs.deltas.push(data.change);
         track.attrs.deltas = track.attrs.deltas.slice(-1000);
 
-        chapter.composition.content[input.where.trackId] = track;
-        await chaptersAPI.update(input.where.chapterId, chapter);
-        chaptersEmitter.emit("documentTrack", message);
+        chapter.composition.content[where.trackId] = track;
+        await chaptersAPI.update(where.chapterId, chapter);
+        chaptersEmitter.emit("composition", message);
 
-        return message.data;
-      } else if (input.action === "created") {
-        chapter.composition.content[input.data.attrs.id] = input.data;
-        await chaptersAPI.update(input.where.chapterId, chapter);
-        return input.data;
+        return data.change;
+      } else if (data.action === "created") {
+        chapter.composition.content[data.change.attrs.id] = data.change;
+        await chaptersAPI.update(where.chapterId, chapter);
+        return data.change;
       } else {
-        delete chapter.composition.content[input.data.attrs.id];
-        await chaptersAPI.update(input.where.chapterId, chapter);
-        return input.data;
+        delete chapter.composition.content[data.change.attrs.id];
+        await chaptersAPI.update(where.chapterId, chapter);
+        return data.change;
       }
     }),
 
-  onDocumentTrackChange: procedure
-    .input(input => input as DocumentTrackMessageWhere)
+  onCompositionChange: procedure
+    .input(input => input as { where: CompositionMessageWhere })
     .subscription(async function* ({ input, signal }) {
-      for await (const [data] of on(chaptersEmitter, "documentTrack", { signal })) {
-        const message = data as DocumentTrackMessage;
+      for await (const [data] of on(chaptersEmitter, "composition", { signal })) {
+        const message = data as CompositionMessage;
         if (message.where.trackId === input.where.trackId) yield message;
       }
     })

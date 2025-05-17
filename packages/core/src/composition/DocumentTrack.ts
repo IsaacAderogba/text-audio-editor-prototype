@@ -5,6 +5,8 @@ import { CompositionDelta, SegmentAttrs, TrackAttrs } from "./Shared";
  */
 export type DocumentType = DocumentTrack["type"];
 export type DocumentTrack = PageTrack;
+export type DocumentTrackDelta = PageTrackDelta;
+export type DocumentSegment = PageSegment;
 
 export type PageTrack = {
   type: "page";
@@ -12,9 +14,8 @@ export type PageTrack = {
   content: Block[];
 };
 
-export interface PageTrackAttrs extends TrackAttrs<DocumentTrackDelta> {}
-
-export type DocumentTrackDelta = CompositionDelta<object>;
+export interface PageTrackAttrs extends TrackAttrs<PageTrackDelta> {}
+export type PageTrackDelta = CompositionDelta<object>;
 
 /**
  * Blocks
@@ -25,7 +26,7 @@ export type Block = ParagraphBlock;
 export type ParagraphBlock = {
   type: "paragraph";
   attrs: ParagraphBlockAttrs;
-  content: DocumentSegment[];
+  content: PageSegment[];
 };
 
 export interface ParagraphBlockAttrs {
@@ -37,8 +38,8 @@ export interface ParagraphBlockAttrs {
 /**
  * Segments
  */
-export type SegmentType = DocumentSegment["type"];
-export type DocumentSegment = VoiceSegment;
+export type SegmentType = PageSegment["type"];
+export type PageSegment = VoiceSegment;
 
 export type VoiceSegment = {
   type: "voice";

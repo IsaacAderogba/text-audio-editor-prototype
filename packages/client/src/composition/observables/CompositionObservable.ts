@@ -1,14 +1,22 @@
 import { Composition } from "@taep/core";
-import { makeAutoObservable, toJS } from "mobx";
 import { merge, omit } from "lodash-es";
-import { DocumentSegmentObservable, DocumentTrackObservable } from "./DocumentTrackObservable";
-import { MediaSegmentObservable, MediaTrackObservable } from "./MediaTrackObservable";
+import { makeAutoObservable, toJS } from "mobx";
 import { ChapterObservable } from "../../store/entities";
 import { EventChangeMetadata, EventEmitter } from "../../utilities/EventEmitter";
 import { DeepPartial } from "../../utilities/types";
+import { PageSegmentObservable, PageTrackObservable } from "./DocumentTrackObservable";
+import {
+  AudioSegmentObservable,
+  AudioTrackObservable,
+  VideoSegmentObservable,
+  VideoTrackObservable
+} from "./MediaTrackObservable";
 
-export type TrackObservable = DocumentTrackObservable | MediaTrackObservable;
-export type SegmentObservable = DocumentSegmentObservable | MediaSegmentObservable;
+export type TrackObservable = PageTrackObservable | VideoTrackObservable | AudioTrackObservable;
+export type SegmentObservable =
+  | PageSegmentObservable
+  | VideoSegmentObservable
+  | AudioSegmentObservable;
 
 export type CompositionEvents = {
   change: (data: CompositionObservable, metadata: EventChangeMetadata) => void;
@@ -28,9 +36,11 @@ export class CompositionObservable extends EventEmitter<CompositionEvents> {
     this.state = omit(this.chapter.state.composition, "content");
     Object.values(this.chapter.state.composition.content).forEach(track => {
       if (track.type === "page") {
-        this.tracks[track.attrs.id] = new DocumentTrackObservable(this, track);
+        this.tracks[track.attrs.id] = new PageTrackObservable(this, track);
+      } else if (track.type === "video") {
+        this.tracks[track.attrs.id] = new VideoTrackObservable(this, track);
       } else {
-        this.tracks[track.attrs.id] = new MediaTrackObservable(this, track);
+        this.tracks[track.attrs.id] = new AudioTrackObservable(this, track);
       }
     });
   }

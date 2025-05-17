@@ -1,22 +1,30 @@
-import { MediaSegment, MediaTrack } from "@taep/core";
+import {
+  AudioSegment,
+  AudioTrack,
+  MediaSegment,
+  MediaTrack,
+  VideoSegment,
+  VideoTrack
+} from "@taep/core";
 import { merge, omit } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
 import { DeepPartial } from "../../utilities/types";
 import type { CompositionObservable } from "./CompositionObservable";
 import { EventChangeMetadata, EventEmitter } from "../../utilities/EventEmitter";
 
-export type MediaTrackEvents<T extends MediaTrack> = {
-  change: (data: MediaTrackObservable<T>, metadata: EventChangeMetadata) => void;
-  segmentChange: (data: MediaSegmentObservable, metadata: EventChangeMetadata) => void;
+type MediaTrackEvents<T extends MediaTrack, S extends MediaSegment> = {
+  change: (data: MediaTrackObservable<T, S>, metadata: EventChangeMetadata) => void;
+  segmentChange: (data: MediaSegmentObservable<T, S>, metadata: EventChangeMetadata) => void;
 };
 
-export class MediaTrackObservable<T extends MediaTrack = MediaTrack> extends EventEmitter<
-  MediaTrackEvents<T>
-> {
+class MediaTrackObservable<
+  T extends MediaTrack = MediaTrack,
+  S extends MediaSegment = MediaSegment
+> extends EventEmitter<MediaTrackEvents<T, S>> {
   composition: CompositionObservable;
 
   state: Omit<T, "content">;
-  segments: Record<string, MediaSegmentObservable<T["content"][""]>> = {};
+  segments: Record<string, MediaSegmentObservable<T, S>> = {};
 
   constructor(composition: CompositionObservable, state: T) {
     super();
@@ -34,7 +42,7 @@ export class MediaTrackObservable<T extends MediaTrack = MediaTrack> extends Eve
     this.composition.emit("trackChange", this, { action: "updated" });
   }
 
-  createSegment(segment: T["content"][""]) {
+  createSegment(segment: S) {
     this.segments[segment.attrs.id] = new MediaSegmentObservable(this, segment);
     this.emit("segmentChange", this.segments[segment.attrs.id], { action: "created" });
   }
@@ -58,17 +66,18 @@ export class MediaTrackObservable<T extends MediaTrack = MediaTrack> extends Eve
   }
 }
 
-export type MediaSegmentEvents<T extends MediaSegment> = {
-  change: (data: MediaSegmentObservable<T>, metadata: EventChangeMetadata) => void;
+type MediaSegmentEvents<T extends MediaTrack, S extends MediaSegment> = {
+  change: (data: MediaSegmentObservable<T, S>, metadata: EventChangeMetadata) => void;
 };
 
-export class MediaSegmentObservable<T extends MediaSegment = MediaSegment> extends EventEmitter<
-  MediaSegmentEvents<T>
-> {
-  track: MediaTrackObservable;
-  state: T;
+class MediaSegmentObservable<
+  T extends MediaTrack = MediaTrack,
+  S extends MediaSegment = MediaSegment
+> extends EventEmitter<MediaSegmentEvents<T, S>> {
+  track: MediaTrackObservable<T, S>;
+  state: S;
 
-  constructor(track: MediaTrackObservable, state: T) {
+  constructor(track: MediaTrackObservable<T, S>, state: S) {
     super();
 
     makeAutoObservable(this);
@@ -76,7 +85,7 @@ export class MediaSegmentObservable<T extends MediaSegment = MediaSegment> exten
     this.state = state;
   }
 
-  update(state: DeepPartial<Pick<T, "attrs">>) {
+  update(state: DeepPartial<Pick<S, "attrs">>) {
     merge(this.state.attrs, state.attrs, { updatedAt: new Date().toISOString() });
 
     const metadata: EventChangeMetadata = { action: "updated" };
@@ -85,7 +94,13 @@ export class MediaSegmentObservable<T extends MediaSegment = MediaSegment> exten
     this.track.composition.emit("segmentChange", this, metadata);
   }
 
-  toJSON(): T {
+  toJSON(): S {
     return toJS(this.state);
   }
 }
+
+export class VideoTrackObservable extends MediaTrackObservable<VideoTrack, VideoSegment> {}
+export class VideoSegmentObservable extends MediaSegmentObservable<VideoTrack, VideoSegment> {}
+
+export class AudioTrackObservable extends MediaTrackObservable<AudioTrack, AudioSegment> {}
+export class AudioSegmentObservable extends MediaSegmentObservable<AudioTrack, AudioSegment> {}
