@@ -8,6 +8,7 @@ import { DeepPartial } from "../../utilities/types";
 import { AudioSegmentObservable, AudioTrackObservable } from "./AudioTrackObservable";
 import { PageSegmentObservable, PageTrackObservable } from "./PageTrackObservable";
 import { VideoSegmentObservable, VideoTrackObservable } from "./VideoTrackObservable";
+import { v4 } from "uuid";
 
 export type TrackObservable = PageTrackObservable | VideoTrackObservable | AudioTrackObservable;
 export type SegmentObservable =
@@ -21,6 +22,7 @@ export type CompositionEvents = {
   segmentChange: (data: SegmentObservable, metadata: EventChangeMetadata) => void;
 };
 export class CompositionObservable extends EventEmitter<CompositionEvents> {
+  clientId = v4();
   chapter: ChapterObservable;
   state: Omit<Composition, "content">;
   tracks: Record<string, TrackObservable> = {};
@@ -73,7 +75,7 @@ export class CompositionObservable extends EventEmitter<CompositionEvents> {
             this.deleteTrack(message.data.change.attrs.id);
           } else {
             const track = this.tracks[message.where.trackId];
-            if (track) track.handleUpdateMessage(message);
+            if (track && track) track.handleUpdateDelta(message.data.change);
           }
         },
         onError: err => console.error("trackMessage error", err)

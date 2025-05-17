@@ -1,16 +1,8 @@
-import {
-  CompositionMessage,
-  NodeGroup,
-  pageSchema,
-  PageSegment,
-  PageTrack,
-  PageTrackDelta
-} from "@taep/core";
+import { NodeGroup, pageSchema, PageSegment, PageTrack, PageTrackDelta } from "@taep/core";
 import { isArray, mergeWith } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
 import { Node } from "prosemirror-model";
 import { Transaction } from "prosemirror-state";
-import { v4 } from "uuid";
 import { EventChangeMetadata, EventEmitter } from "../../utilities/EventEmitter";
 import { client } from "../../utilities/trpc";
 import { DeepPartialBy } from "../../utilities/types";
@@ -47,16 +39,16 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
 
     makeAutoObservable(this, { editor: false });
     this.composition = composition;
-    this.editor = new DocumentEditor(v4(), {
+    this.editor = new DocumentEditor(this.composition.clientId, {
       doc: pageSchema.nodeFromJSON(state),
       extensions: [
         new AttrsExtension(),
         new CollabExtension({
-          onTrackDelta: async change => {
+          onDelta: async delta => {
             return await client.chapter.pageCompositionChange.mutate({
               type: "page",
               where: { chapterId: composition.chapter.state.id, trackId: state.attrs.id },
-              data: { action: "updated", change }
+              data: { action: "updated", change: delta }
             });
           }
         }),
@@ -70,7 +62,7 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
         new VoiceExtension(),
         new TextExtension()
       ],
-      onStateTransaction: this.handleUpdate,
+      onStateTransaction: this.handleTransaction,
       context: { track: this }
     });
 
@@ -80,13 +72,21 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
     });
   }
 
-  handleUpdateMessage(message: CompositionMessage) {
-    if (message.type !== "page" || message.data.action !== "updated") return;
+  handleUpdateDelta(delta: PageTrackDelta) {
     const extension = this.editor.extensions.get(CollabExtension.name);
-    if (extension instanceof CollabExtension) extension.dispatchTrackDelta([message.data.change]);
+    if (extension instanceof CollabExtension) extension.dispatchDelta([delta]);
   }
 
-  handleUpdate(transaction: Transaction) {
+  async sendUpdateDelta(delta: PageTrackDelta) {
+    const trackId = this.editor.state.doc.attrs.id;
+    return await client.chapter.pageCompositionChange.mutate({
+      type: "page",
+      where: { chapterId: this.composition.chapter.state.id, trackId },
+      data: { action: "updated", change: delta }
+    });
+  }
+
+  handleTransaction(transaction: Transaction) {
     const prevState = this.editor.state;
     const nextState = this.editor.state.apply(transaction);
 

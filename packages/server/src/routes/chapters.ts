@@ -1,9 +1,14 @@
 import {
   AudioCompositionMessage,
+  AudioTrack,
   Chapter,
   CompositionMessage,
+  CompositionMessageWhere,
   PageCompositionMessage,
+  PageTrack,
+  Track,
   VideoCompositionMessage,
+  VideoTrack,
   pageSchema
 } from "@taep/core";
 import { TRPCError } from "@trpc/server";
@@ -65,15 +70,7 @@ const chapterRouter = router({
     .input(input => input as VideoCompositionMessage)
     .mutation(async ({ input: message }) => {
       const { where, data } = message;
-      const chapter = await chaptersAPI.read(where.chapterId);
-      if (!chapter) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Chapter not found" });
-      }
-
-      const track = chapter.composition.content[where.trackId];
-      if (!track || track.type !== "video") {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Video track not found" });
-      }
+      const { chapter, track } = await findChapterTrack<VideoTrack>("video", where);
 
       if (data.action === "updated") {
         const latestVersion = track.attrs.latestVersion;
@@ -112,15 +109,7 @@ const chapterRouter = router({
     .input(input => input as AudioCompositionMessage)
     .mutation(async ({ input: message }) => {
       const { where, data } = message;
-      const chapter = await chaptersAPI.read(where.chapterId);
-      if (!chapter) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Chapter not found" });
-      }
-
-      const track = chapter.composition.content[where.trackId];
-      if (!track || track.type !== "audio") {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Video track not found" });
-      }
+      const { chapter, track } = await findChapterTrack<AudioTrack>("audio", where);
 
       if (data.action === "updated") {
         const latestVersion = track.attrs.latestVersion;
@@ -160,15 +149,7 @@ const chapterRouter = router({
     .input(input => input as PageCompositionMessage)
     .mutation(async ({ input: message }) => {
       const { data, where } = message;
-      const chapter = await chaptersAPI.read(where.chapterId);
-      if (!chapter) {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Chapter not found" });
-      }
-
-      const track = chapter.composition.content[where.trackId];
-      if (!track || track.type !== "page") {
-        throw new TRPCError({ code: "NOT_FOUND", message: "Page track not found" });
-      }
+      const { chapter, track } = await findChapterTrack<PageTrack>("page", where);
 
       if (data.action === "updated") {
         const latestVersion = track.attrs.latestVersion;
@@ -214,5 +195,22 @@ const chapterRouter = router({
       }
     })
 });
+
+const findChapterTrack = async <T extends Track>(
+  type: T["type"],
+  where: CompositionMessageWhere
+) => {
+  const chapter = await chaptersAPI.read(where.chapterId);
+  if (!chapter) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Chapter not found" });
+  }
+
+  const track = chapter.composition.content[where.trackId];
+  if (!track || track.type !== type) {
+    throw new TRPCError({ code: "NOT_FOUND", message: "Track not found" });
+  }
+
+  return { chapter, track: track as T };
+};
 
 export { chapterRouter };
