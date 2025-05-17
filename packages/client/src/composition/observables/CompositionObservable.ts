@@ -5,12 +5,8 @@ import { ChapterObservable } from "../../store/entities";
 import { EventChangeMetadata, EventEmitter } from "../../utilities/EventEmitter";
 import { DeepPartial } from "../../utilities/types";
 import { PageSegmentObservable, PageTrackObservable } from "./DocumentTrackObservable";
-import {
-  AudioSegmentObservable,
-  AudioTrackObservable,
-  VideoSegmentObservable,
-  VideoTrackObservable
-} from "./MediaTrackObservable";
+import { VideoSegmentObservable, VideoTrackObservable } from "./VideoTrackObservable";
+import { AudioSegmentObservable, AudioTrackObservable } from "./AudioTrackObservable";
 
 export type TrackObservable = PageTrackObservable | VideoTrackObservable | AudioTrackObservable;
 export type SegmentObservable =
