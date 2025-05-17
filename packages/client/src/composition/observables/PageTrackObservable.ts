@@ -1,5 +1,5 @@
 import { NodeGroup, pageSchema, PageSegment, PageTrack, PageTrackDelta } from "@taep/core";
-import { isArray, mergeWith } from "lodash-es";
+import { isArray, mergeWith, throttle } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
 import { Node } from "prosemirror-model";
 import { Transaction } from "prosemirror-state";
@@ -66,17 +66,24 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
 
   handleDelta(delta: PageTrackDelta) {
     const extension = this.editor.extensions.get(CollabExtension.name);
-    if (extension instanceof CollabExtension) extension.sendDelta([delta]);
+    if (extension instanceof CollabExtension) extension.sendTrackDelta([delta]);
   }
 
-  sendDelta = (delta: PageTrackDelta): Promise<PageTrackDelta | PageTrack> => {
+  sendDelta = throttle(async (delta: PageTrackDelta) => {
     const trackId = this.editor.state.doc.attrs.id;
-    return client.chapter.pageCompositionChange.mutate({
+    const response = await client.chapter.pageCompositionChange.mutate({
       type: "page",
       where: { chapterId: this.composition.chapter.state.id, trackId },
       data: { action: "updated", change: delta }
     });
-  };
+
+    if (response.type === "delta") {
+      this.handleDelta(response);
+    } else {
+      const extension = this.editor.extensions.get(CollabExtension.name);
+      if (extension instanceof CollabExtension) extension.sendTrack(response);
+    }
+  });
 
   handleTransaction(transaction: Transaction) {
     const prevState = this.editor.state;

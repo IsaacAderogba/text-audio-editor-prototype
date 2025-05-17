@@ -5,7 +5,7 @@ import { Step } from "prosemirror-transform";
 import { HookExtension } from "../Extension";
 
 export interface CollabExtensionOptions {
-  onDelta: (data: DocumentTrackDelta) => Promise<DocumentTrackDelta | DocumentTrack>;
+  onDelta: (data: DocumentTrackDelta) => void;
 }
 
 export class CollabExtension extends HookExtension {
@@ -15,7 +15,9 @@ export class CollabExtension extends HookExtension {
     super();
   }
 
-  sendDelta: (data: DocumentTrackDelta[]) => void = () => {};
+  sendTrack: (data: DocumentTrack) => void = () => {};
+  sendTrackDelta: (data: DocumentTrackDelta[]) => void = () => {};
+
   initializePlugins = () => {
     const { onDelta } = this.options;
 
@@ -26,7 +28,29 @@ export class CollabExtension extends HookExtension {
       }),
       collabSync: new Plugin({
         view: view => {
-          this.sendDelta = async data => {
+          this.sendTrack = async data => {
+            const version = getVersion(view.state);
+            const idx = data.attrs.deltas.findIndex(change => change.version === version);
+            if (idx !== -1) {
+              this.sendTrackDelta(data.attrs.deltas.slice(idx));
+            } else {
+              // replace document state to get it back in sync
+              const state = this.editor.state;
+              const doc = state.schema.nodeFromJSON(data);
+              const tr = state.tr.replaceWith(0, state.doc.content.size, doc.content);
+              tr.setMeta("collab", { version: data.attrs.latestVersion, unconfirmed: [] });
+
+              try {
+                tr.setSelection(TextSelection.create(tr.doc, state.selection.anchor));
+              } catch {
+                // ignore error
+              }
+
+              view.dispatch(tr);
+            }
+          };
+
+          this.sendTrackDelta = async data => {
             if (data[0]?.version !== getVersion(view.state)) return;
 
             const state = this.editor.state;
@@ -45,34 +69,12 @@ export class CollabExtension extends HookExtension {
               const message = sendableSteps(view.state);
               if (!message) return;
 
-              const data = await onDelta({
+              onDelta({
                 type: "delta",
                 clientId: message.clientID as string,
                 version: message.version,
                 steps: message.steps.map(step => step.toJSON())
               });
-
-              if (data.type === "delta") return this.sendDelta([data]);
-
-              const version = getVersion(view.state);
-              const idx = data.attrs.deltas.findIndex(change => change.version === version);
-              if (idx !== -1) {
-                this.sendDelta(data.attrs.deltas.slice(idx));
-              } else {
-                // replace document state to get it back in sync
-                const state = this.editor.state;
-                const doc = state.schema.nodeFromJSON(data);
-                const tr = state.tr.replaceWith(0, state.doc.content.size, doc.content);
-                tr.setMeta("collab", { version: data.attrs.latestVersion, unconfirmed: [] });
-
-                try {
-                  tr.setSelection(TextSelection.create(tr.doc, state.selection.anchor));
-                } catch {
-                  // ignore error
-                }
-
-                view.dispatch(tr);
-              }
             }
           };
         }
