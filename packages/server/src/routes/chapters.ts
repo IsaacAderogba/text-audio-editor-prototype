@@ -91,12 +91,12 @@ const chapterRouter = router({
         chaptersEmitter.emit("composition", message);
 
         return data.change;
-      } else if (data.action === "created") {
-        chapter.composition.content[data.change.attrs.id] = data.change;
+      } else if (data.action === "deleted") {
+        delete chapter.composition.content[data.change.attrs.id];
         await chaptersAPI.update(where.chapterId, chapter);
         return data.change;
       } else {
-        delete chapter.composition.content[data.change.attrs.id];
+        chapter.composition.content[data.change.attrs.id] = data.change;
         await chaptersAPI.update(where.chapterId, chapter);
         return data.change;
       }
@@ -126,12 +126,12 @@ const chapterRouter = router({
         chaptersEmitter.emit("composition", message);
 
         return data.change;
-      } else if (data.action === "created") {
-        chapter.composition.content[data.change.attrs.id] = data.change;
+      } else if (data.action === "deleted") {
+        delete chapter.composition.content[data.change.attrs.id];
         await chaptersAPI.update(where.chapterId, chapter);
         return data.change;
       } else {
-        delete chapter.composition.content[data.change.attrs.id];
+        chapter.composition.content[data.change.attrs.id] = data.change;
         await chaptersAPI.update(where.chapterId, chapter);
         return data.change;
       }
@@ -167,12 +167,12 @@ const chapterRouter = router({
         chaptersEmitter.emit("composition", message);
 
         return data.change;
-      } else if (data.action === "created") {
-        chapter.composition.content[data.change.attrs.id] = data.change;
+      } else if (data.action === "deleted") {
+        delete chapter.composition.content[data.change.attrs.id];
         await chaptersAPI.update(where.chapterId, chapter);
         return data.change;
       } else {
-        delete chapter.composition.content[data.change.attrs.id];
+        chapter.composition.content[data.change.attrs.id] = data.change;
         await chaptersAPI.update(where.chapterId, chapter);
         return data.change;
       }

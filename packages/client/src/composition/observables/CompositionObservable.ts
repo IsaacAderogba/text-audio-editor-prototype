@@ -1,4 +1,4 @@
-import { Composition, Track } from "@taep/core";
+import { Composition, CompositionMessage, Track } from "@taep/core";
 import { merge, omit } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
 import { v4 } from "uuid";
@@ -68,7 +68,7 @@ export class CompositionObservable extends EventEmitter<CompositionEvents> {
     return client.chapter.onCompositionChange.subscribe(
       { where: { chapterId: this.chapter.state.id } },
       {
-        onData: message => {
+        onData: (message: CompositionMessage) => {
           if (message.data.action === "created") {
             this.createTrack(message.data.change);
           } else if (message.data.action === "deleted") {

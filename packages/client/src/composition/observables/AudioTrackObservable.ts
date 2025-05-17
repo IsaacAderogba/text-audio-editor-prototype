@@ -31,12 +31,12 @@ export class AudioTrackObservable extends EventEmitter<AudioTrackEvents> {
     for (const step of delta.steps) {
       if (step.data.type === "audio") {
         this.update(step.data);
-      } else if (step.action === "created") {
-        this.createSegment(step.data);
-      } else if (step.action === "updated") {
-        this.updateSegment(step.data.attrs.id, step.data);
       } else if (step.action === "deleted") {
         this.deleteSegment(step.data.attrs.id);
+      } else if (step.action === "updated" && this.segments[step.data.attrs.id]) {
+        this.updateSegment(step.data.attrs.id, step.data);
+      } else {
+        this.createSegment(step.data);
       }
     }
   }

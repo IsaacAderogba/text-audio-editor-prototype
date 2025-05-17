@@ -15,7 +15,7 @@ export interface TrackAttrs<T> {
 export interface SegmentAttrs {
   id: string;
   trackId: string;
-  from: number;
+  offset: number;
   duration: number;
   playbackRate: number;
   createdAt: string;

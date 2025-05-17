@@ -13,11 +13,17 @@ export interface VideoTrack {
 export interface VideoTrackAttrs extends TrackAttrs<VideoTrackDelta> {}
 
 export type VideoTrackDelta = CompositionDelta<VideoTrackDeltaStep>;
-export type VideoTrackDeltaStep = {
+export type VideoTrackDeltaStep =
+  | VideoTrackCreatedDeltaStep
+  | VideoTrackUpdatedDeltaStep
+  | VideoTrackDeletedDeltaStep;
+export type VideoTrackCreatedDeltaStep = { type: "video"; action: "created"; data: VideoSegment };
+export type VideoTrackUpdatedDeltaStep = {
   type: "video";
-  action: "created" | "updated" | "deleted";
+  action: "updated";
   data: VideoSegment | Omit<VideoTrack, "content">;
 };
+export type VideoTrackDeletedDeltaStep = { type: "video"; action: "deleted"; data: VideoSegment };
 
 export type VideoSegment = FrameSegment;
 
@@ -30,11 +36,17 @@ export interface AudioTrack {
 export interface AudioTrackAttrs extends TrackAttrs<AudioTrackDelta> {}
 
 export type AudioTrackDelta = CompositionDelta<AudioTrackDeltaStep>;
-export type AudioTrackDeltaStep = {
+export type AudioTrackDeltaStep =
+  | AudioTrackCreatedDeltaStep
+  | AudioTrackUpdatedDeltaStep
+  | AudioTrackDeletedDeltaStep;
+export type AudioTrackCreatedDeltaStep = { type: "audio"; action: "created"; data: AudioSegment };
+export type AudioTrackUpdatedDeltaStep = {
   type: "audio";
-  action: "created" | "updated" | "deleted";
+  action: "updated";
   data: AudioSegment | Omit<AudioTrack, "content">;
 };
+export type AudioTrackDeletedDeltaStep = { type: "audio"; action: "deleted"; data: AudioSegment };
 
 export type AudioSegment = SampleSegment;
 

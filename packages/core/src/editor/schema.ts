@@ -69,7 +69,7 @@ export const nodeSpecs: Record<`${NodeName}`, NodeSpec> = {
       id: "",
       voiceId: "",
       trackId: "",
-      from: 0,
+      offset: 0,
       duration: 0,
       playbackRate: 1,
       createdAt: "",
