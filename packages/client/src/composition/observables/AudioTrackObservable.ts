@@ -41,7 +41,6 @@ export class AudioTrackObservable extends EventEmitter<AudioTrackEvents> {
     const segment = this.segments[id];
     if (segment) {
       delete this.segments[id];
-      segment.listeners.clear();
       this.emit("segmentChange", segment, { action: "deleted" });
     }
   }

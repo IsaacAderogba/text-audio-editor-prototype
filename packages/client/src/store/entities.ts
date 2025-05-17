@@ -50,7 +50,6 @@ class EntityStoreObservable<T> extends EventEmitter<EntityStoreEvents<T>> {
     const entity = this.state[id];
     if (entity) {
       delete this.state[id];
-      entity.listeners.clear();
       this.emit("entityChange", entity, { action: "deleted" });
     }
   }

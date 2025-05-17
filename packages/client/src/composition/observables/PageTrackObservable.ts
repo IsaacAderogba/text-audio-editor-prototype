@@ -53,7 +53,7 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
           onSubscribe: dispatch => {
             return this.composition.on("trackMessage", message => {
               if (message.type !== "page" || message.where.trackId !== state.attrs.id) return;
-              if ("version" in message.data.change) dispatch(message.data.change);
+              if (message.data.action === "updated") dispatch(message.data.change);
             });
           }
         }),
@@ -122,7 +122,6 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
       const segment = this.segments[id];
       if (segment) {
         delete this.segments[id];
-        segment.listeners.clear();
         this.emit("segmentChange", segment, { action: "deleted" });
       }
     }

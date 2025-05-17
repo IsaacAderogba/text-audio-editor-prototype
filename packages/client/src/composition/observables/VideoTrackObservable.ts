@@ -41,7 +41,6 @@ export class VideoTrackObservable extends EventEmitter<VideoTrackEvents> {
     const segment = this.segments[id];
     if (segment) {
       delete this.segments[id];
-      segment.listeners.clear();
       this.emit("segmentChange", segment, { action: "deleted" });
     }
   }

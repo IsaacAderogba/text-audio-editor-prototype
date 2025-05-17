@@ -7,7 +7,7 @@ interface Events {
 export type EventsApi<T extends Events> = T;
 
 export class EventEmitter<T extends Events> {
-  public listeners = new Map<string, Set<Function>>();
+  protected listeners = new Map<string, Set<Function>>();
 
   public on<E extends KeyOf<T>>(event: E, cb: T[E]) {
     if (!this.listeners.has(event)) {

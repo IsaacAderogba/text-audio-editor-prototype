@@ -1,4 +1,4 @@
-import { Composition, CompositionMessage } from "@taep/core";
+import { Composition, CompositionMessage, Track } from "@taep/core";
 import { merge, omit } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
 import { ChapterObservable } from "../../store/entities";
@@ -26,6 +26,7 @@ export class CompositionObservable extends EventEmitter<CompositionEvents> {
   chapter: ChapterObservable;
   state: Omit<Composition, "content">;
   tracks: Record<string, TrackObservable> = {};
+  cleanup: () => void;
 
   constructor(chapter: ChapterObservable) {
     super();
@@ -34,20 +35,52 @@ export class CompositionObservable extends EventEmitter<CompositionEvents> {
     this.chapter = chapter;
     this.state = omit(this.chapter.state.composition, "content");
     Object.values(this.chapter.state.composition.content).forEach(track => {
-      if (track.type === "page") {
-        this.tracks[track.attrs.id] = new PageTrackObservable(this, track);
-      } else if (track.type === "video") {
-        this.tracks[track.attrs.id] = new VideoTrackObservable(this, track);
-      } else {
-        this.tracks[track.attrs.id] = new AudioTrackObservable(this, track);
-      }
+      this.createTrack(track);
     });
+
+    const { unsubscribe } = client.chapter.onCompositionChange.subscribe(
+      { where: { chapterId: this.chapter.state.id } },
+      {
+        onData: message => {
+          if (message.data.action === "created") {
+            this.createTrack(message.data.change);
+          } else if (message.data.action === "deleted") {
+            this.deleteTrack(message.data.change.attrs.id);
+          } else {
+            this.emit("trackMessage", message);
+          }
+        },
+        onError: err => console.error("trackMessage error", err)
+      }
+    );
+
+    this.cleanup = unsubscribe;
   }
 
   update(state: DeepPartial<Pick<Composition, "attrs">>) {
     merge(this.state.attrs, state.attrs);
 
     this.emit("change", this, { action: "updated" });
+  }
+
+  createTrack(track: Track) {
+    if (track.type === "page") {
+      this.tracks[track.attrs.id] = new PageTrackObservable(this, track);
+    } else if (track.type === "video") {
+      this.tracks[track.attrs.id] = new VideoTrackObservable(this, track);
+    } else {
+      this.tracks[track.attrs.id] = new AudioTrackObservable(this, track);
+    }
+
+    this.emit("trackChange", this.tracks[track.attrs.id], { action: "created" });
+  }
+
+  deleteTrack(id: string) {
+    const track = this.tracks[id];
+    if (track) {
+      delete this.tracks[id];
+      this.emit("trackChange", track, { action: "deleted" });
+    }
   }
 
   toJSON(): Composition {
@@ -58,20 +91,5 @@ export class CompositionObservable extends EventEmitter<CompositionEvents> {
     });
 
     return { ...toJS(this.state), content };
-  }
-
-  subscribe() {
-    const { unsubscribe } = client.chapter.onCompositionChange.subscribe(
-      { where: { chapterId: this.chapter.state.id } },
-      {
-        onData: message => this.emit("trackMessage", message),
-        onError: err => console.error("trackMessage error", err)
-      }
-    );
-
-    return () => {
-      this.listeners.clear();
-      unsubscribe();
-    };
   }
 }

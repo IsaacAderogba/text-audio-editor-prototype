@@ -2,7 +2,7 @@ import { EditorState, EditorStateConfig, Plugin, Transaction } from "prosemirror
 import { DirectEditorProps, EditorView } from "prosemirror-view";
 import { EventEmitter } from "../../utilities/EventEmitter";
 import { Extension } from "../extensions/Extension";
-import { DocumentTrackObservable } from "../observables/PageTrackObservable";
+import { PageTrackObservable } from "../observables/PageTrackObservable";
 import { CommandChainProps, createCommandChain } from "./transform/chain";
 
 type EditorEvents = {
@@ -17,7 +17,7 @@ interface EditorOptions extends Omit<EditorStateConfig, "plugins"> {
 }
 
 interface DocumentContext {
-  track: DocumentTrackObservable<any, any>;
+  track: PageTrackObservable;
 }
 
 export class DocumentEditor extends EventEmitter<EditorEvents> {
