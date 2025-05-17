@@ -21,8 +21,8 @@ interface DocumentContext {
 }
 
 export class DocumentEditor extends EventEmitter<EditorEvents> {
-  private extensions = new Map<string, Extension>();
   private onStateTransaction: (tr: Transaction) => void;
+  public extensions = new Map<string, Extension>();
   public state: EditorState;
   public commands = {} as Commands;
   public context: DocumentContext;

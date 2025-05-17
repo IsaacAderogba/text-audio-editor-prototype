@@ -1,4 +1,11 @@
-import { NodeGroup, pageSchema, PageSegment, PageTrack } from "@taep/core";
+import {
+  CompositionMessage,
+  NodeGroup,
+  pageSchema,
+  PageSegment,
+  PageTrack,
+  PageTrackDelta
+} from "@taep/core";
 import { isArray, mergeWith } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
 import { Node } from "prosemirror-model";
@@ -26,6 +33,8 @@ interface ChangeMetadata {
 type PageTrackEvents = {
   change: (data: PageTrackObservable, metadata: ChangeMetadata) => void;
   segmentChange: (data: PageSegmentObservable, metadata: ChangeMetadata) => void;
+
+  trackDelta: (data: PageTrackDelta) => void;
 };
 export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
   composition: CompositionObservable;
@@ -43,17 +52,11 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
       extensions: [
         new AttrsExtension(),
         new CollabExtension({
-          publish: async change => {
+          onTrackDelta: async change => {
             return await client.chapter.pageCompositionChange.mutate({
               type: "page",
               where: { chapterId: composition.chapter.state.id, trackId: state.attrs.id },
               data: { action: "updated", change }
-            });
-          },
-          onSubscribe: dispatch => {
-            return this.composition.on("trackMessage", message => {
-              if (message.type !== "page" || message.where.trackId !== state.attrs.id) return;
-              if (message.data.action === "updated") dispatch(message.data.change);
             });
           }
         }),
@@ -77,7 +80,13 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
     });
   }
 
-  handleUpdate = (transaction: Transaction) => {
+  handleUpdateMessage(message: CompositionMessage) {
+    if (message.type !== "page" || message.data.action !== "updated") return;
+    const extension = this.editor.extensions.get(CollabExtension.name);
+    if (extension instanceof CollabExtension) extension.dispatchTrackDelta([message.data.change]);
+  }
+
+  handleUpdate(transaction: Transaction) {
     const prevState = this.editor.state;
     const nextState = this.editor.state.apply(transaction);
 
@@ -143,7 +152,7 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
 
     this.emit("change", this, { action: "updated" });
     this.composition.emit("trackChange", this, { action: "updated" });
-  };
+  }
 
   update(state: DeepPartialBy<Partial<Omit<PageTrack, "type">>, "attrs">) {
     this.editor.chain().updateTrack(state).run();

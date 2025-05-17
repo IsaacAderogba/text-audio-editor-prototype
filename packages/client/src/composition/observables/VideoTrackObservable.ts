@@ -1,4 +1,4 @@
-import { VideoSegment, VideoTrack } from "@taep/core";
+import { CompositionMessage, VideoSegment, VideoTrack } from "@taep/core";
 import { merge, omit } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
 import { EventChangeMetadata, EventEmitter } from "../../utilities/EventEmitter";
@@ -24,6 +24,8 @@ export class VideoTrackObservable extends EventEmitter<VideoTrackEvents> {
     this.state = omit(state, "content");
     Object.values(state.content).forEach(segment => this.createSegment(segment));
   }
+
+  handleUpdateMessage(message: CompositionMessage) {}
 
   update(state: DeepPartial<Pick<VideoTrack, "attrs">>) {
     merge(this.state.attrs, state.attrs, { updatedAt: new Date().toISOString() });

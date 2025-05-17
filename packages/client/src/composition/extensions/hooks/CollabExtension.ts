@@ -5,8 +5,7 @@ import { Step } from "prosemirror-transform";
 import { HookExtension } from "../Extension";
 
 export interface CollabExtensionOptions {
-  publish: (data: DocumentTrackDelta) => Promise<DocumentTrackDelta | DocumentTrack>;
-  onSubscribe: (dispatch: (data: DocumentTrackDelta) => void) => () => void;
+  onTrackDelta: (data: DocumentTrackDelta) => Promise<DocumentTrackDelta | DocumentTrack>;
 }
 
 export class CollabExtension extends HookExtension {
@@ -16,8 +15,9 @@ export class CollabExtension extends HookExtension {
     super();
   }
 
+  dispatchTrackDelta: (data: DocumentTrackDelta[]) => void = () => {};
   initializePlugins = () => {
-    const { onSubscribe, publish } = this.options;
+    const { onTrackDelta } = this.options;
 
     return {
       collab: collab({
@@ -26,7 +26,7 @@ export class CollabExtension extends HookExtension {
       }),
       collabSync: new Plugin({
         view: view => {
-          const dispatch = async (data: DocumentTrackDelta[]) => {
+          this.dispatchTrackDelta = async data => {
             if (data[0]?.version !== getVersion(view.state)) return;
 
             const state = this.editor.state;
@@ -40,27 +40,24 @@ export class CollabExtension extends HookExtension {
             view.dispatch(receiveTransaction(view.state, steps, clientIds));
           };
 
-          const unsubscribe = onSubscribe(data => dispatch([data]));
-
           return {
-            destroy: unsubscribe,
             update: async () => {
               const message = sendableSteps(view.state);
               if (!message) return;
 
-              const data = await publish({
+              const data = await onTrackDelta({
                 type: "delta",
                 clientId: message.clientID as string,
                 version: message.version,
                 steps: message.steps.map(step => step.toJSON())
               });
 
-              if (data.type === "delta") return dispatch([data]);
+              if (data.type === "delta") return this.dispatchTrackDelta([data]);
 
               const version = getVersion(view.state);
               const idx = data.attrs.deltas.findIndex(change => change.version === version);
               if (idx !== -1) {
-                dispatch(data.attrs.deltas.slice(idx));
+                this.dispatchTrackDelta(data.attrs.deltas.slice(idx));
               } else {
                 // replace document state to get it back in sync
                 const state = this.editor.state;

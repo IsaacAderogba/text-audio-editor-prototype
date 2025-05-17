@@ -1,4 +1,4 @@
-import { Composition, CompositionMessage, Track } from "@taep/core";
+import { Composition, Track } from "@taep/core";
 import { merge, omit } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
 import { ChapterObservable } from "../../store/entities";
@@ -19,14 +19,11 @@ export type CompositionEvents = {
   change: (data: CompositionObservable, metadata: EventChangeMetadata) => void;
   trackChange: (data: TrackObservable, metadata: EventChangeMetadata) => void;
   segmentChange: (data: SegmentObservable, metadata: EventChangeMetadata) => void;
-
-  trackMessage: (data: CompositionMessage) => void;
 };
 export class CompositionObservable extends EventEmitter<CompositionEvents> {
   chapter: ChapterObservable;
   state: Omit<Composition, "content">;
   tracks: Record<string, TrackObservable> = {};
-  cleanup: () => void;
 
   constructor(chapter: ChapterObservable) {
     super();
@@ -37,24 +34,6 @@ export class CompositionObservable extends EventEmitter<CompositionEvents> {
     Object.values(this.chapter.state.composition.content).forEach(track => {
       this.createTrack(track);
     });
-
-    const { unsubscribe } = client.chapter.onCompositionChange.subscribe(
-      { where: { chapterId: this.chapter.state.id } },
-      {
-        onData: message => {
-          if (message.data.action === "created") {
-            this.createTrack(message.data.change);
-          } else if (message.data.action === "deleted") {
-            this.deleteTrack(message.data.change.attrs.id);
-          } else {
-            this.emit("trackMessage", message);
-          }
-        },
-        onError: err => console.error("trackMessage error", err)
-      }
-    );
-
-    this.cleanup = unsubscribe;
   }
 
   update(state: DeepPartial<Pick<Composition, "attrs">>) {
@@ -81,6 +60,25 @@ export class CompositionObservable extends EventEmitter<CompositionEvents> {
       delete this.tracks[id];
       this.emit("trackChange", track, { action: "deleted" });
     }
+  }
+
+  subscribeToRemoteChanges() {
+    return client.chapter.onCompositionChange.subscribe(
+      { where: { chapterId: this.chapter.state.id } },
+      {
+        onData: message => {
+          if (message.data.action === "created") {
+            this.createTrack(message.data.change);
+          } else if (message.data.action === "deleted") {
+            this.deleteTrack(message.data.change.attrs.id);
+          } else {
+            const track = this.tracks[message.where.trackId];
+            if (track) track.handleUpdateMessage(message);
+          }
+        },
+        onError: err => console.error("trackMessage error", err)
+      }
+    );
   }
 
   toJSON(): Composition {

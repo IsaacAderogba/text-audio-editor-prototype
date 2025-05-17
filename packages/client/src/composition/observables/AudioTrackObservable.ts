@@ -1,4 +1,4 @@
-import { AudioSegment, AudioTrack } from "@taep/core";
+import { AudioSegment, AudioTrack, CompositionMessage } from "@taep/core";
 import { merge, omit } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
 import { EventChangeMetadata, EventEmitter } from "../../utilities/EventEmitter";
@@ -24,6 +24,8 @@ export class AudioTrackObservable extends EventEmitter<AudioTrackEvents> {
     this.state = omit(state, "content");
     Object.values(state.content).forEach(segment => this.createSegment(segment));
   }
+
+  handleUpdateMessage(message: CompositionMessage) {}
 
   update(state: DeepPartial<Pick<AudioTrack, "attrs">>) {
     merge(this.state.attrs, state.attrs, { updatedAt: new Date().toISOString() });
