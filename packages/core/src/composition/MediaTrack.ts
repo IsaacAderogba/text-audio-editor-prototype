@@ -2,6 +2,7 @@ import { CompositionDelta, SegmentAttrs, TrackAttrs } from "./Shared";
 
 export type MediaTrack = VideoTrack | AudioTrack;
 export type MediaTrackDelta = VideoTrackDelta | AudioTrackDelta;
+export type MediaTrackDeltaStep = VideoTrackDeltaStep | AudioTrackDeltaStep;
 export type MediaSegment = VideoSegment | AudioSegment;
 
 export interface VideoTrack {
@@ -14,16 +15,19 @@ export interface VideoTrackAttrs extends TrackAttrs<VideoTrackDelta> {}
 
 export type VideoTrackDelta = CompositionDelta<VideoTrackDeltaStep>;
 export type VideoTrackDeltaStep =
-  | VideoTrackCreatedDeltaStep
-  | VideoTrackUpdatedDeltaStep
-  | VideoTrackDeletedDeltaStep;
-export type VideoTrackCreatedDeltaStep = { type: "video"; action: "created"; data: VideoSegment };
-export type VideoTrackUpdatedDeltaStep = {
+  | VideoTrackUpdatedTrackStep
+  | VideoTrackCreatedSegmentStep
+  | VideoTrackUpdatedSegmentStep
+  | VideoTrackDeletedSegmentStep;
+
+export type VideoTrackUpdatedTrackStep = {
   type: "video";
   action: "updated";
-  data: VideoSegment | Omit<VideoTrack, "content">;
+  data: Omit<VideoTrack, "content">;
 };
-export type VideoTrackDeletedDeltaStep = { type: "video"; action: "deleted"; data: VideoSegment };
+export type VideoTrackCreatedSegmentStep = { type: "video"; action: "created"; data: VideoSegment };
+export type VideoTrackUpdatedSegmentStep = { type: "video"; action: "updated"; data: VideoSegment };
+export type VideoTrackDeletedSegmentStep = { type: "video"; action: "deleted"; data: VideoSegment };
 
 export type VideoSegment = FrameSegment;
 
@@ -37,16 +41,19 @@ export interface AudioTrackAttrs extends TrackAttrs<AudioTrackDelta> {}
 
 export type AudioTrackDelta = CompositionDelta<AudioTrackDeltaStep>;
 export type AudioTrackDeltaStep =
-  | AudioTrackCreatedDeltaStep
-  | AudioTrackUpdatedDeltaStep
-  | AudioTrackDeletedDeltaStep;
-export type AudioTrackCreatedDeltaStep = { type: "audio"; action: "created"; data: AudioSegment };
-export type AudioTrackUpdatedDeltaStep = {
+  | AudioTrackUpdatedTrackStep
+  | AudioTrackCreatedSegmentStep
+  | AudioTrackUpdatedSegmentStep
+  | AudioTrackDeletedSegmentStep;
+
+export type AudioTrackUpdatedTrackStep = {
   type: "audio";
   action: "updated";
-  data: AudioSegment | Omit<AudioTrack, "content">;
+  data: Omit<AudioTrack, "content">;
 };
-export type AudioTrackDeletedDeltaStep = { type: "audio"; action: "deleted"; data: AudioSegment };
+export type AudioTrackCreatedSegmentStep = { type: "audio"; action: "created"; data: AudioSegment };
+export type AudioTrackUpdatedSegmentStep = { type: "audio"; action: "updated"; data: AudioSegment };
+export type AudioTrackDeletedSegmentStep = { type: "audio"; action: "deleted"; data: AudioSegment };
 
 export type AudioSegment = SampleSegment;
 

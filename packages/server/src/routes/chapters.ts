@@ -4,6 +4,9 @@ import {
   Chapter,
   CompositionMessage,
   CompositionMessageWhere,
+  MediaSegment,
+  MediaTrack,
+  MediaTrackDeltaStep,
   PageCompositionMessage,
   PageTrack,
   Track,
@@ -12,6 +15,7 @@ import {
   pageSchema
 } from "@taep/core";
 import { TRPCError } from "@trpc/server";
+import { isAfter } from "date-fns";
 import { EventEmitter, on } from "events";
 import { Step } from "prosemirror-transform";
 import { createDatabaseAdapter } from "../services/database.js";
@@ -73,16 +77,7 @@ const chapterRouter = router({
       const { chapter, track } = await findChapterTrack<VideoTrack>("video", where);
 
       if (data.action === "updated") {
-        for (const step of data.change.steps) {
-          if (step.data.type === "video") {
-            Object.assign(track, step.data);
-          } else if (step.action === "deleted") {
-            delete track.content[step.data.attrs.id];
-          } else {
-            track.content[step.data.attrs.id] = step.data;
-          }
-        }
-
+        data.change.steps = reconcileTrackSteps(track, data.change.steps);
         track.attrs.deltas.push(data.change);
         track.attrs.deltas = track.attrs.deltas.slice(-1000);
 
@@ -108,16 +103,7 @@ const chapterRouter = router({
       const { chapter, track } = await findChapterTrack<AudioTrack>("audio", where);
 
       if (data.action === "updated") {
-        for (const step of data.change.steps) {
-          if (step.data.type === "audio") {
-            Object.assign(track, step.data);
-          } else if (step.action === "deleted") {
-            delete track.content[step.data.attrs.id];
-          } else {
-            track.content[step.data.attrs.id] = step.data;
-          }
-        }
-
+        data.change.steps = reconcileTrackSteps(track, data.change.steps);
         track.attrs.deltas.push(data.change);
         track.attrs.deltas = track.attrs.deltas.slice(-1000);
 
@@ -187,6 +173,37 @@ const chapterRouter = router({
       }
     })
 });
+
+function reconcileTrackSteps<T extends MediaTrack, S extends MediaTrackDeltaStep>(
+  track: T,
+  steps: S[]
+): S[] {
+  const reconciledSteps: S[] = [];
+
+  for (const step of steps) {
+    if (step.data.type === track.type) {
+      Object.assign(track, step.data);
+      reconciledSteps.push(step);
+    } else {
+      const data = track.content[step.data.attrs.id];
+      const stale = data && isAfter(data.attrs.updatedAt, step.data.attrs.updatedAt);
+
+      if (!stale && step.action === "deleted") {
+        delete track.content[step.data.attrs.id];
+        reconciledSteps.push(step);
+      } else if (step.action === "created") {
+        track.content[step.data.attrs.id] = step.data;
+        reconciledSteps.push(step);
+      } else {
+        const segment = stale ? data : step.data;
+        track.content[step.data.attrs.id] = segment as MediaSegment;
+        reconciledSteps.push({ type: track.type, action: "updated", data: segment } as S);
+      }
+    }
+  }
+
+  return reconciledSteps;
+}
 
 const findChapterTrack = async <T extends Track>(
   type: T["type"],
