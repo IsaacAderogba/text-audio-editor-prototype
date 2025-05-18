@@ -30,13 +30,13 @@ export class AudioTrackObservable extends EventEmitter<AudioTrackEvents> {
   handleDelta(delta: AudioTrackDelta) {
     for (const step of delta.steps) {
       if (step.data.type === "audio") {
-        this.update(step.data);
+        merge(this.state.attrs, step.data.attrs);
       } else if (step.action === "deleted") {
-        this.deleteSegment(step.data.attrs.id);
+        delete this.segments[step.data.attrs.id];
       } else if (step.action === "updated" && this.segments[step.data.attrs.id]) {
-        this.updateSegment(step.data.attrs.id, step.data);
+        merge(this.segments[step.data.attrs.id].state.attrs, step.data.attrs);
       } else {
-        this.createSegment(step.data);
+        this.segments[step.data.attrs.id] = new AudioSegmentObservable(this, step.data);
       }
     }
   }
