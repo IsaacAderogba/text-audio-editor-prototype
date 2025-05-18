@@ -29,25 +29,19 @@ export class CollabExtension extends HookExtension {
       collabSync: new Plugin({
         view: view => {
           this.sendTrack = async data => {
-            const version = getVersion(view.state);
-            const idx = data.attrs.deltas.findIndex(change => change.version === version);
-            if (idx !== -1) {
-              this.sendTrackDelta(data.attrs.deltas.slice(idx));
-            } else {
-              // replace document state to get it back in sync
-              const state = this.editor.state;
-              const doc = state.schema.nodeFromJSON(data);
-              const tr = state.tr.replaceWith(0, state.doc.content.size, doc.content);
-              tr.setMeta("collab", { version: data.attrs.latestVersion, unconfirmed: [] });
+            // replace document state to get it back in sync
+            const state = this.editor.state;
+            const doc = state.schema.nodeFromJSON(data);
+            const tr = state.tr.replaceWith(0, state.doc.content.size, doc.content);
+            tr.setMeta("collab", { version: data.attrs.latestVersion, unconfirmed: [] });
 
-              try {
-                tr.setSelection(TextSelection.create(tr.doc, state.selection.anchor));
-              } catch {
-                // ignore error
-              }
-
-              view.dispatch(tr);
+            try {
+              tr.setSelection(TextSelection.create(tr.doc, state.selection.anchor));
+            } catch {
+              // ignore error
             }
+
+            view.dispatch(tr);
           };
 
           this.sendTrackDelta = async data => {

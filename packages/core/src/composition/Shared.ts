@@ -5,9 +5,9 @@ export interface CompositionDelta<T> {
   steps: T[];
 }
 
-export interface TrackAttrs<T> {
+export interface TrackAttrs {
   id: string;
-  deltas: T[];
+  latestVersion: number;
   createdAt: string;
   updatedAt: string;
 }

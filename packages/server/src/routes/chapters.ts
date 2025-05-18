@@ -6,7 +6,7 @@ import {
   CompositionMessageWhere,
   MediaSegment,
   MediaTrack,
-  MediaTrackDeltaStep,
+  MediaTrackDelta,
   PageCompositionMessage,
   PageTrack,
   Track,
@@ -77,15 +77,13 @@ const chapterRouter = router({
       const { chapter, track } = await findChapterTrack<VideoTrack>("video", where);
 
       if (data.action === "updated") {
-        data.change.steps = reconcileTrackSteps(track, data.change.steps);
-        track.attrs.deltas.push(data.change);
-        track.attrs.deltas = track.attrs.deltas.slice(-1000);
+        const reconciled = reconcileMediaTrack(track, data.change);
 
-        chapter.composition.content[where.trackId] = track;
+        chapter.composition.content[where.trackId] = reconciled.track;
         await chaptersAPI.update(where.chapterId, chapter);
         chaptersEmitter.emit("composition", message);
 
-        return data.change;
+        return reconciled.delta;
       } else if (data.action === "deleted") {
         delete chapter.composition.content[data.change.attrs.id];
         await chaptersAPI.update(where.chapterId, chapter);
@@ -103,15 +101,13 @@ const chapterRouter = router({
       const { chapter, track } = await findChapterTrack<AudioTrack>("audio", where);
 
       if (data.action === "updated") {
-        data.change.steps = reconcileTrackSteps(track, data.change.steps);
-        track.attrs.deltas.push(data.change);
-        track.attrs.deltas = track.attrs.deltas.slice(-1000);
+        const reconciled = reconcileMediaTrack(track, data.change);
 
-        chapter.composition.content[where.trackId] = track;
+        chapter.composition.content[where.trackId] = reconciled.track;
         await chaptersAPI.update(where.chapterId, chapter);
         chaptersEmitter.emit("composition", message);
 
-        return data.change;
+        return reconciled.delta;
       } else if (data.action === "deleted") {
         delete chapter.composition.content[data.change.attrs.id];
         await chaptersAPI.update(where.chapterId, chapter);
@@ -145,8 +141,6 @@ const chapterRouter = router({
 
         Object.assign(track, doc.toJSON());
         track.attrs.latestVersion = latestVersion + data.change.steps.length;
-        track.attrs.deltas.push(data.change);
-        track.attrs.deltas = track.attrs.deltas.slice(-1000);
 
         chapter.composition.content[where.trackId] = track;
         await chaptersAPI.update(where.chapterId, chapter);
@@ -174,35 +168,36 @@ const chapterRouter = router({
     })
 });
 
-function reconcileTrackSteps<T extends MediaTrack, S extends MediaTrackDeltaStep>(
-  track: T,
-  steps: S[]
-): S[] {
-  const reconciledSteps: S[] = [];
+function reconcileMediaTrack<T extends MediaTrack, D extends MediaTrackDelta>(track: T, delta: D) {
+  const latestVersion = track.attrs.latestVersion;
+  const reconciledSteps: D["steps"] = [];
 
-  for (const step of steps) {
+  for (const step of delta.steps) {
     if (step.data.type === track.type) {
       Object.assign(track, step.data);
-      reconciledSteps.push(step);
+      reconciledSteps.push(step as any);
     } else {
       const data = track.content[step.data.attrs.id];
       const stale = data && isAfter(data.attrs.updatedAt, step.data.attrs.updatedAt);
 
       if (!stale && step.action === "deleted") {
         delete track.content[step.data.attrs.id];
-        reconciledSteps.push(step);
+        reconciledSteps.push(step as any);
       } else if (step.action === "created") {
         track.content[step.data.attrs.id] = step.data;
-        reconciledSteps.push(step);
+        reconciledSteps.push(step as any);
       } else {
-        const segment = stale ? data : step.data;
-        track.content[step.data.attrs.id] = segment as MediaSegment;
-        reconciledSteps.push({ type: track.type, action: "updated", data: segment } as S);
+        const segment = stale ? data : (step.data as MediaSegment);
+        track.content[step.data.attrs.id] = segment;
+        reconciledSteps.push({ ...step, action: "updated", data: segment } as any);
       }
     }
   }
 
-  return reconciledSteps;
+  track.attrs.latestVersion = latestVersion + reconciledSteps.length;
+  delta.steps = reconciledSteps;
+
+  return { track, delta };
 }
 
 const findChapterTrack = async <T extends Track>(

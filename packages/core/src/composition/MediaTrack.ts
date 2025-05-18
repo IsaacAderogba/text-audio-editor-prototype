@@ -11,7 +11,7 @@ export interface VideoTrack {
   content: Record<string, VideoSegment>;
 }
 
-export interface VideoTrackAttrs extends TrackAttrs<VideoTrackDelta> {}
+export interface VideoTrackAttrs extends TrackAttrs {}
 
 export type VideoTrackDelta = CompositionDelta<VideoTrackDeltaStep>;
 export type VideoTrackDeltaStep =
@@ -37,7 +37,7 @@ export interface AudioTrack {
   content: Record<string, AudioSegment>;
 }
 
-export interface AudioTrackAttrs extends TrackAttrs<AudioTrackDelta> {}
+export interface AudioTrackAttrs extends TrackAttrs {}
 
 export type AudioTrackDelta = CompositionDelta<AudioTrackDeltaStep>;
 export type AudioTrackDeltaStep =

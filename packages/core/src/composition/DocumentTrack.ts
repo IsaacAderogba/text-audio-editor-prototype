@@ -14,9 +14,7 @@ export type PageTrack = {
   content: Block[];
 };
 
-export interface PageTrackAttrs extends TrackAttrs<PageTrackDelta> {
-  latestVersion: number;
-}
+export interface PageTrackAttrs extends TrackAttrs {}
 
 export type PageTrackDelta = CompositionDelta<object>;
 
