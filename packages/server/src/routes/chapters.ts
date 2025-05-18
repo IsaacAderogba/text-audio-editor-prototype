@@ -140,6 +140,7 @@ const chapterRouter = router({
 
         Object.assign(track, doc.toJSON());
         track.version = track.version + data.change.steps.length;
+        data.change.version = track.version;
 
         chapter.composition.content[where.trackId] = track;
         await chaptersAPI.update(where.chapterId, chapter);

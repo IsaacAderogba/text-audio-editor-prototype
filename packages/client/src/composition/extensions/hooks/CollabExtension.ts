@@ -45,7 +45,7 @@ export class CollabExtension extends HookExtension {
           };
 
           this.sendTrackDelta = async data => {
-            if (data.version !== getVersion(view.state)) return;
+            if (data.version !== getVersion(view.state) + data.steps.length) return;
 
             const state = this.editor.state;
             const steps: Step[] = [];
