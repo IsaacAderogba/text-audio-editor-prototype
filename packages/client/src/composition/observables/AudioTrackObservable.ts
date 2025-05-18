@@ -27,7 +27,7 @@ export class AudioTrackObservable extends EventEmitter<AudioTrackEvents> {
   }
 
   steps: AudioTrackDeltaStep[] = [];
-  handleDelta(delta: AudioTrackDelta) {
+  handleTrackDelta(delta: AudioTrackDelta) {
     for (const step of delta.steps) {
       if (step.data.type === "audio") {
         merge(this.state.attrs, step.data.attrs);
@@ -50,7 +50,7 @@ export class AudioTrackObservable extends EventEmitter<AudioTrackEvents> {
     });
 
     this.steps = this.steps.slice(index);
-    if (response.type === "delta") this.handleDelta(response);
+    if (response.type === "delta") this.handleTrackDelta(response);
   });
 
   createDeltaStep(step: AudioTrackDeltaStep) {

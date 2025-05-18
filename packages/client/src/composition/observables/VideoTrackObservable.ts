@@ -27,7 +27,7 @@ export class VideoTrackObservable extends EventEmitter<VideoTrackEvents> {
   }
 
   steps: VideoTrackDeltaStep[] = [];
-  handleDelta(delta: VideoTrackDelta) {
+  handleTrackDelta(delta: VideoTrackDelta) {
     for (const step of delta.steps) {
       if (step.data.type === "video") {
         merge(this.state.attrs, step.data.attrs);
@@ -50,7 +50,7 @@ export class VideoTrackObservable extends EventEmitter<VideoTrackEvents> {
     });
 
     this.steps = this.steps.slice(index);
-    if (response.type === "delta") this.handleDelta(response);
+    if (response.type === "delta") this.handleTrackDelta(response);
   });
 
   createDeltaStep(step: VideoTrackDeltaStep) {

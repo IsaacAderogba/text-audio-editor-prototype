@@ -76,7 +76,7 @@ export class CompositionObservable extends EventEmitter<CompositionEvents> {
           } else {
             const track = this.tracks[message.where.trackId];
             // @ts-expect-error - todo
-            if (track && track) track.handleDelta(message.data.change);
+            if (track && track) track.handleTrackDelta(message.data.change);
           }
         },
         onError: err => console.error("trackMessage error", err)

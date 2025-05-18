@@ -54,7 +54,7 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
         new VoiceExtension(),
         new TextExtension()
       ],
-      onStateTransaction: this.handleTransaction,
+      onStateTransaction: this.handleTrack,
       context: { track: this }
     });
 
@@ -64,28 +64,7 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
     });
   }
 
-  handleDelta(delta: PageTrackDelta) {
-    const extension = this.editor.extensions.get(CollabExtension.name);
-    if (extension instanceof CollabExtension) extension.sendTrackDelta([delta]);
-  }
-
-  sendDelta = throttle(async (delta: PageTrackDelta) => {
-    const trackId = this.editor.state.doc.attrs.id;
-    const response = await client.chapter.pageCompositionChange.mutate({
-      type: "page",
-      where: { chapterId: this.composition.chapter.state.id, trackId },
-      data: { action: "updated", change: delta }
-    });
-
-    if (response.type === "delta") {
-      this.handleDelta(response);
-    } else {
-      const extension = this.editor.extensions.get(CollabExtension.name);
-      if (extension instanceof CollabExtension) extension.sendTrack(response);
-    }
-  });
-
-  handleTransaction(transaction: Transaction) {
+  handleTrack(transaction: Transaction) {
     const prevState = this.editor.state;
     const nextState = this.editor.state.apply(transaction);
 
@@ -152,6 +131,27 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
     this.emit("change", this, { action: "updated" });
     this.composition.emit("trackChange", this, { action: "updated" });
   }
+
+  handleTrackDelta(delta: PageTrackDelta) {
+    const extension = this.editor.extensions.get(CollabExtension.name);
+    if (extension instanceof CollabExtension) extension.sendTrackDelta([delta]);
+  }
+
+  sendDelta = throttle(async (delta: PageTrackDelta) => {
+    const trackId = this.editor.state.doc.attrs.id;
+    const response = await client.chapter.pageCompositionChange.mutate({
+      type: "page",
+      where: { chapterId: this.composition.chapter.state.id, trackId },
+      data: { action: "updated", change: delta }
+    });
+
+    if (response.type === "delta") {
+      this.handleTrackDelta(response);
+    } else {
+      const extension = this.editor.extensions.get(CollabExtension.name);
+      if (extension instanceof CollabExtension) extension.sendTrack(response);
+    }
+  });
 
   update(state: DeepPartialBy<Partial<Omit<PageTrack, "type">>, "attrs">) {
     this.editor.chain().updateTrack(state).run();
