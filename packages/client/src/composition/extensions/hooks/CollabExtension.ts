@@ -1,4 +1,4 @@
-import { DocumentTrack, DocumentTrackDelta, getAttrs } from "@taep/core";
+import { DocumentTrack, DocumentTrackDelta } from "@taep/core";
 import { collab, getVersion, receiveTransaction, sendableSteps } from "prosemirror-collab";
 import { Plugin, TextSelection } from "prosemirror-state";
 import { Step } from "prosemirror-transform";
@@ -16,14 +16,14 @@ export class CollabExtension extends HookExtension {
   }
 
   sendTrack: (data: DocumentTrack) => void = () => {};
-  sendTrackDelta: (data: DocumentTrackDelta[]) => void = () => {};
+  sendTrackDelta: (data: DocumentTrackDelta) => void = () => {};
 
   initializePlugins = () => {
     const { onDelta } = this.options;
 
     return {
       collab: collab({
-        version: getAttrs<DocumentTrack>(this.editor.state.doc).latestVersion,
+        version: this.editor.context.track.state.version,
         clientID: this.editor.id
       }),
       collabSync: new Plugin({
@@ -33,7 +33,7 @@ export class CollabExtension extends HookExtension {
             const state = this.editor.state;
             const doc = state.schema.nodeFromJSON(data);
             const tr = state.tr.replaceWith(0, state.doc.content.size, doc.content);
-            tr.setMeta("collab", { version: data.attrs.latestVersion, unconfirmed: [] });
+            tr.setMeta("collab", { version: data.version, unconfirmed: [] });
 
             try {
               tr.setSelection(TextSelection.create(tr.doc, state.selection.anchor));
@@ -45,15 +45,13 @@ export class CollabExtension extends HookExtension {
           };
 
           this.sendTrackDelta = async data => {
-            if (data[0]?.version !== getVersion(view.state)) return;
+            if (data.version !== getVersion(view.state)) return;
 
             const state = this.editor.state;
             const steps: Step[] = [];
             const clientIds: string[] = [];
-            for (const { steps, clientId } of data) {
-              steps.push(...steps.map(step => Step.fromJSON(state.schema, step)));
-              clientIds.push(...steps.map(() => clientId));
-            }
+            steps.push(...data.steps.map(step => Step.fromJSON(state.schema, step)));
+            clientIds.push(...data.steps.map(() => data.clientId));
 
             view.dispatch(receiveTransaction(view.state, steps, clientIds));
           };

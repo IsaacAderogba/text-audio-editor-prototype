@@ -1,5 +1,5 @@
 import { NodeGroup, pageSchema, PageSegment, PageTrack, PageTrackDelta } from "@taep/core";
-import { isArray, mergeWith, throttle } from "lodash-es";
+import { isArray, mergeWith, omit, pick, throttle } from "lodash-es";
 import { makeAutoObservable, toJS } from "mobx";
 import { Node } from "prosemirror-model";
 import { Transaction } from "prosemirror-state";
@@ -31,6 +31,7 @@ type PageTrackEvents = {
 export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
   composition: CompositionObservable;
 
+  state: Pick<PageTrack, "version">;
   editor: DocumentEditor;
   segments: Record<string, PageSegmentObservable> = {};
 
@@ -39,8 +40,9 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
 
     makeAutoObservable(this, { editor: false });
     this.composition = composition;
+    this.state = pick(state, "version");
     this.editor = new DocumentEditor(this.composition.clientId, {
-      doc: pageSchema.nodeFromJSON(state),
+      doc: pageSchema.nodeFromJSON(omit(state, "version")),
       extensions: [
         new AttrsExtension(),
         new CollabExtension({ onDelta: async delta => this.sendDelta(delta) }),
@@ -134,7 +136,7 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
 
   handleTrackDelta(delta: PageTrackDelta) {
     const extension = this.editor.extensions.get(CollabExtension.name);
-    if (extension instanceof CollabExtension) extension.sendTrackDelta([delta]);
+    if (extension instanceof CollabExtension) extension.sendTrackDelta(delta);
   }
 
   sendDelta = throttle(async (delta: PageTrackDelta) => {
@@ -158,7 +160,7 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
   }
 
   toJSON(): PageTrack {
-    return this.editor.state.toJSON();
+    return { ...this.editor.state.toJSON(), version: this.state.version };
   }
 }
 

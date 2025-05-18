@@ -126,8 +126,7 @@ const chapterRouter = router({
       const { chapter, track } = await findChapterTrack<PageTrack>("page", where);
 
       if (data.action === "updated") {
-        const latestVersion = track.attrs.latestVersion;
-        if (latestVersion !== data.change.version) return track;
+        if (track.version !== data.change.version) return track;
 
         let doc = pageSchema.nodeFromJSON(track);
 
@@ -140,7 +139,7 @@ const chapterRouter = router({
         }
 
         Object.assign(track, doc.toJSON());
-        track.attrs.latestVersion = latestVersion + data.change.steps.length;
+        track.version = track.version + data.change.steps.length;
 
         chapter.composition.content[where.trackId] = track;
         await chaptersAPI.update(where.chapterId, chapter);
@@ -169,7 +168,6 @@ const chapterRouter = router({
 });
 
 function reconcileMediaTrack<T extends MediaTrack, D extends MediaTrackDelta>(track: T, delta: D) {
-  const latestVersion = track.attrs.latestVersion;
   const reconciledSteps: D["steps"] = [];
 
   for (const step of delta.steps) {
@@ -194,7 +192,8 @@ function reconcileMediaTrack<T extends MediaTrack, D extends MediaTrackDelta>(tr
     }
   }
 
-  track.attrs.latestVersion = latestVersion + reconciledSteps.length;
+  track.version = track.version + reconciledSteps.length;
+  delta.version = track.version;
   delta.steps = reconciledSteps;
 
   return { track, delta };

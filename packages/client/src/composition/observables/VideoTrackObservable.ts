@@ -55,7 +55,12 @@ export class VideoTrackObservable extends EventEmitter<VideoTrackEvents> {
 
   createDeltaStep(step: VideoTrackDeltaStep) {
     this.steps.push(step);
-    this.sendDelta({ type: "delta", clientId: this.composition.clientId, steps: this.steps });
+    this.sendDelta({
+      type: "delta",
+      version: this.state.version,
+      clientId: this.composition.clientId,
+      steps: this.steps
+    });
   }
 
   update(state: DeepPartial<Pick<VideoTrack, "attrs">>) {

@@ -9,6 +9,7 @@ export interface VideoTrack {
   type: "video";
   attrs: VideoTrackAttrs;
   content: Record<string, VideoSegment>;
+  version: number;
 }
 
 export interface VideoTrackAttrs extends TrackAttrs {}
@@ -35,6 +36,7 @@ export interface AudioTrack {
   type: "audio";
   attrs: AudioTrackAttrs;
   content: Record<string, AudioSegment>;
+  version: number;
 }
 
 export interface AudioTrackAttrs extends TrackAttrs {}

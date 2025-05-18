@@ -12,6 +12,7 @@ export type PageTrack = {
   type: "page";
   attrs: PageTrackAttrs;
   content: Block[];
+  version: number;
 };
 
 export interface PageTrackAttrs extends TrackAttrs {}
