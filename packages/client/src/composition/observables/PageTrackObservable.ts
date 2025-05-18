@@ -56,7 +56,7 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
         new VoiceExtension(),
         new TextExtension()
       ],
-      onStateTransaction: this.handleTrack,
+      onStateTransaction: this.handleTransaction,
       context: { track: this }
     });
 
@@ -66,7 +66,7 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
     });
   }
 
-  handleTrack(transaction: Transaction) {
+  handleTransaction(transaction: Transaction) {
     const prevState = this.editor.state;
     const nextState = this.editor.state.apply(transaction);
 
@@ -134,7 +134,7 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
     this.composition.emit("trackChange", this, { action: "updated" });
   }
 
-  handleTrackDelta(delta: PageTrackDelta) {
+  handleDelta(delta: PageTrackDelta) {
     this.state.version = delta.version;
     const extension = this.editor.extensions.get(CollabExtension.name);
     if (extension instanceof CollabExtension) extension.sendTrackDelta(delta);
@@ -149,7 +149,7 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
     });
 
     if (response.type === "delta") {
-      this.handleTrackDelta(response);
+      this.handleDelta(response);
     } else {
       const extension = this.editor.extensions.get(CollabExtension.name);
       if (extension instanceof CollabExtension) extension.sendTrack(response);
