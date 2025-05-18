@@ -28,6 +28,7 @@ export class VideoTrackObservable extends EventEmitter<VideoTrackEvents> {
 
   steps: VideoTrackDeltaStep[] = [];
   handleTrackDelta(delta: VideoTrackDelta) {
+    this.state.version = delta.version;
     for (const step of delta.steps) {
       if (step.data.type === "video") {
         merge(this.state.attrs, step.data.attrs);

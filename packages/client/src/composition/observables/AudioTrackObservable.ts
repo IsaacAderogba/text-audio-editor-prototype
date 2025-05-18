@@ -28,6 +28,7 @@ export class AudioTrackObservable extends EventEmitter<AudioTrackEvents> {
 
   steps: AudioTrackDeltaStep[] = [];
   handleTrackDelta(delta: AudioTrackDelta) {
+    this.state.version = delta.version;
     for (const step of delta.steps) {
       if (step.data.type === "audio") {
         merge(this.state.attrs, step.data.attrs);

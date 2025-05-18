@@ -135,6 +135,7 @@ export class PageTrackObservable extends EventEmitter<PageTrackEvents> {
   }
 
   handleTrackDelta(delta: PageTrackDelta) {
+    this.state.version = delta.version;
     const extension = this.editor.extensions.get(CollabExtension.name);
     if (extension instanceof CollabExtension) extension.sendTrackDelta(delta);
   }
